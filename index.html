@@ -443,26 +443,63 @@
     }
 
     /* ================= 大屏畫板邏輯 ================= */
-    function initCanvas() {
-      const container = document.querySelector('.canvas-container');
-      canvas = document.getElementById('paintCanvas');
+    /* ================= 大屏畫板邏輯 (圓滑高清優化版) ================= */
+function initCanvas() {
+  const container = document.querySelector('.canvas-container');
+  canvas = document.getElementById('paintCanvas');
 
-      setTimeout(() => {
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
-        ctx = canvas.getContext('2d');
-        ctx.lineWidth = 4; 
-        ctx.lineCap = 'round'; 
-        ctx.strokeStyle = '#000000';
-      }, 50);
+  setTimeout(() => {
+    // 1. 取得裝置像素比 (解決高清大屏/Retina螢幕上的鋸齒粗糙感)
+    const dpr = window.devicePixelRatio || 1;
+    
+    // 設置 Canvas 內部的真實解析度
+    canvas.width = container.clientWidth * dpr;
+    canvas.height = container.clientHeight * dpr;
 
-      canvas.addEventListener('mousedown', e => { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); });
-      canvas.addEventListener('mousemove', e => { if (isDrawing) { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } });
-      canvas.addEventListener('mouseup', () => isDrawing = false);
-      canvas.addEventListener('touchstart', e => { e.preventDefault(); const t = e.touches[0]; const r = canvas.getBoundingClientRect(); isDrawing = true; ctx.beginPath(); ctx.moveTo(t.clientX - r.left, t.clientY - r.top); }, {passive:false});
-      canvas.addEventListener('touchmove', e => { e.preventDefault(); if (!isDrawing) return; const t = e.touches[0]; const r = canvas.getBoundingClientRect(); ctx.lineTo(t.clientX - r.left, t.clientY - r.top); ctx.stroke(); }, {passive:false});
-      canvas.addEventListener('touchend', () => isDrawing = false);
-    }
+    ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr); // 縮放繪圖上下文，保持座標計算一致
+
+    // 2. 筆觸細節設定
+    ctx.lineWidth = 4; 
+    ctx.lineCap = 'round';   // 線條兩端圓滑
+    ctx.lineJoin = 'round';  // 💡 關鍵：線條轉折處圓滑 (消除鋸齒與尖角)
+    ctx.strokeStyle = '#000000';
+  }, 50);
+
+  // 繪圖事件監聽 (座標計算保持不變)
+  canvas.addEventListener('mousedown', e => { 
+    isDrawing = true; 
+    ctx.beginPath(); 
+    ctx.moveTo(e.offsetX, e.offsetY); 
+  });
+  canvas.addEventListener('mousemove', e => { 
+    if (isDrawing) { 
+      ctx.lineTo(e.offsetX, e.offsetY); 
+      ctx.stroke(); 
+    } 
+  });
+  canvas.addEventListener('mouseup', () => isDrawing = false);
+  
+  canvas.addEventListener('touchstart', e => { 
+    e.preventDefault(); 
+    const t = e.touches[0]; 
+    const r = canvas.getBoundingClientRect(); 
+    isDrawing = true; 
+    ctx.beginPath(); 
+    ctx.moveTo(t.clientX - r.left, t.clientY - r.top); 
+  }, {passive:false});
+  
+  canvas.addEventListener('touchmove', e => { 
+    e.preventDefault(); 
+    if (!isDrawing) return; 
+    const t = e.touches[0]; 
+    const r = canvas.getBoundingClientRect(); 
+    ctx.lineTo(t.clientX - r.left, t.clientY - r.top); 
+    ctx.stroke(); 
+  }, {passive:false});
+  
+  canvas.addEventListener('touchend', () => isDrawing = false);
+}
 
     function setMode(m) {
       mode = m;
@@ -470,6 +507,8 @@
       document.getElementById('eraserBtn').className = (mode === 'eraser') ? 'btn-primary square-btn' : 'btn-outline square-btn';
       ctx.strokeStyle = (mode === 'pen') ? '#000000' : '#ffffff';
       ctx.lineWidth = (mode === 'pen') ? 4 : 30;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round'; // 保持橡皮擦與畫筆轉折皆圓滑
     }
 
     function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
