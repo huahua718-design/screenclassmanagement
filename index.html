@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智慧教室管理系統</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; }
+    body { background-color: #f4f6f9; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+    
+    header { background: #1e293b; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
+    .header-title { font-size: 1.5rem; font-weight: bold; }
+    .date-display { font-size: 1.1rem; color: #94a3b8; }
+    .btn-group { display: flex; gap: 10px; }
+
+    button { padding: 10px 18px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-purple { background: #8b5cf6; color: white; }
+    .btn-outline { background: transparent; border: 2px solid #64748b; color: #f8fafc; }
+
+    main { flex: 1; position: relative; display: flex; flex-direction: column; padding: 15px; }
+    .canvas-container { flex: 1; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
+    canvas { width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+
+    /* 左側懸浮工具列 */
+    .canvas-toolbar-left {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      backdrop-filter: blur(4px);
+      user-select: none;
+      touch-action: none;
+    }
+    
+    .canvas-toolbar-left button {
+      width: 52px !important;
+      height: 52px !important;
+      padding: 0 !important;
+      font-size: 0.75rem !important;
+      font-weight: bold !important;
+      border-radius: 8px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 2px !important;
+      cursor: pointer;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .canvas-toolbar-left button span {
+      pointer-events: none;
+    }
+
+    .mobile-container { padding: 20px; flex: 1; overflow-y: auto; max-width: 500px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 15px; }
+    .mobile-btn-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); text-align: center; cursor: pointer; }
+    .mobile-btn-card h3 { font-size: 1.3rem; margin-bottom: 8px; color: #1e293b; }
+    .mobile-btn-card p { color: #64748b; font-size: 0.95rem; }
+
+    .overlay-panel { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100vw; 
+      height: 100vh; 
+      background: #f8fafc; 
+      z-index: 200; 
+      display: none; 
+      flex-direction: column; 
+      padding: 25px; 
+    }
+    .overlay-panel.active { 
+      display: flex; 
+    }
+    .overlay-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; }
+
+    .card-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+    .reminder-card { background: white; border-left: 6px solid #3b82f6; padding: 18px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; }
+    .reminder-card.考試 { border-left-color: #ef4444; }
+    .reminder-card.作業 { border-left-color: #f59e0b; }
+    .reminder-card.提醒事項 { border-left-color: #10b981; }
+    .card-type { font-weight: bold; padding: 4px 12px; border-radius: 4px; color: white; font-size: 1.1rem; }
+    .type-考試 { background: #ef4444; } .type-作業 { background: #f59e0b; } .type-提醒事項 { background: #10b981; }
+    .card-content { font-size: 1.2rem; font-weight: 500; margin-left: 15px; flex: 1; }
+
+    .student-badge-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .student-btn { background: #ef4444; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+
+    .modal-backdrop { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:300; justify-content:center; align-items:center; }
+    .modal-box { background:white; padding:25px; border-radius:12px; width:90%; max-width:450px; }
+
+    #loadingSpinner { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 400; justify-content: center; align-items: center; color: white; font-size: 1.5rem; flex-direction: column; gap: 15px; }
+    .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #3b82f6; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* 提醒事項雙欄版面配置 */
+    .reminder-split-container {
+      display: flex;
+      gap: 20px;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .reminder-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+
+    .col-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #1e293b;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    /* 手機版自動切換為上下排列 */
+    @media (max-width: 768px) {
+      .reminder-split-container {
+        flex-direction: column;
+        overflow-y: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title" id="pageTitle">智慧教室管理系統</div>
+    <div class="date-display" id="todayDateStr">載入中...</div>
+    <div class="btn-group" id="headerBtns">
+      <button class="btn-primary" onclick="openTodayTasks()">📋 今日任務</button>
+      <button class="btn-purple" onclick="openMissingDashboard()">📋 缺交銷案看板</button>
+      <button class="btn-warning" onclick="openReminders()">📅 班級提醒事項</button>
+    </div>
+  </header>
+
+  <main id="mainScreen" style="display:none;">
+    <!-- 左側懸浮工具列 -->
+    <div class="canvas-toolbar-left" id="draggableToolbar">
+      <button id="penBtn" class="btn-primary square-btn" onclick="setMode('pen')">
+        <span>✏️</span><span>畫筆</span>
+      </button>
+      <button id="eraserBtn" class="btn-outline square-btn" style="color:#333;" onclick="setMode('eraser')">
+        <span>🧹</span><span>橡皮擦</span>
+      </button>
+      <button class="btn-danger square-btn" onclick="clearCanvas()">
+        <span>🗑️</span><span>清除</span>
+      </button>
+      <button class="btn-success square-btn" onclick="submitHandwriting()">
+        <span>🚀</span><span>送出</span>
+      </button>
+    </div>
+
+    <div class="canvas-container">
+      <canvas id="paintCanvas"></canvas>
+    </div>
+  </main>
+
+  <div id="teacherScreen" class="mobile-container" style="display:none;">
+    <div class="mobile-btn-card" style="border-top: 5px solid #10b981;" onclick="openTodayTasks()">
+      <h3>📋 今日任務查詢</h3>
+      <p>查看今日需執行的作業與提醒事項</p>
+    </div>
+
+    <div class="mobile-btn-card" style="border-top: 5px solid #f59e0b;" onclick="openGeneralAudioModal()">
+      <h3>🎙️ 班級記事語音錄音</h3>
+      <p>口述新增明天考試、作業或提醒事項</p>
+    </div>
+
+    <div class="mobile-btn-card" style="border-top: 5px solid #8b5cf6;" onclick="openMissingModal()">
+      <h3>📋 缺交語音登記</h3>
+      <p>選取作業項目，口述未繳學生座號</p>
+    </div>
+
+    <div class="mobile-btn-card" style="border-top: 5px solid #3b82f6;" onclick="openReminders()">
+      <h3>📅 查看提醒事項看板</h3>
+      <p>預覽明日與下週之班級提醒事項</p>
+    </div>
+
+    <div class="mobile-btn-card" style="border-top: 5px solid #ef4444;" onclick="openMissingDashboard()">
+      <h3>📊 全班缺交銷案看板</h3>
+      <p>點擊缺交座號按鈕，直接快速完成銷案</p>
+    </div>
+  </div>
+
+  <div id="parentScreen" class="mobile-container" style="display:none;">
+    <div id="loginCard" style="background:white; padding:25px; border-radius:12px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+      <h2 style="font-size:1.5rem; color:#1e293b; margin-bottom:15px; text-align:center;">🔒 家長查詢登入</h2>
+      <div style="margin-bottom:15px;">
+        <label style="font-weight:bold; display:block; margin-bottom:5px;">學生座號：</label>
+        <input type="number" id="loginSeatNo" placeholder="請輸入座號 (例: 5)" style="width:100%; padding:12px; font-size:1rem; border:1px solid #ccc; border-radius:8px;">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-weight:bold; display:block; margin-bottom:5px;">登入密碼：</label>
+        <input type="password" id="loginPassword" placeholder="請輸入密碼" style="width:100%; padding:12px; font-size:1rem; border:1px solid #ccc; border-radius:8px;">
+      </div>
+      <button class="btn-primary" style="width:100%; padding:12px; font-size:1.1rem;" onclick="handleParentLogin()">登入查詢</button>
+    </div>
+
+    <div id="studentDashboard" style="display:none;">
+      <div style="background:white; padding:15px; border-radius:12px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+        <span id="welcomeMsg" style="font-size:1.1rem; font-weight:bold;"></span>
+        <button class="btn-danger" style="padding:6px 12px; font-size:0.85rem;" onclick="handleParentLogout()">登出</button>
+      </div>
+      <div style="margin-bottom:20px;">
+        <h3 style="color:#ef4444; margin-bottom:10px;">⚠️ 個人待補交項目：</h3>
+        <div id="personalMissingList" class="card-list"></div>
+      </div>
+      <div style="margin-bottom:20px;">
+        <h3 style="color:#1e293b; margin-bottom:10px;">📌 明日全班提醒事項：</h3>
+        <div id="parentReminderList" class="card-list"></div>
+      </div>
+      <div>
+        <h3 style="color:#1e293b; margin-bottom:10px;">🗓️ 下週全週提醒：</h3>
+        <div id="parentNextWeekList" class="card-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 今日任務 Overlay -->
+  <div id="todayTasksOverlay" class="overlay-panel">
+    <div class="overlay-header">
+      <h2 style="font-size: 1.8rem;" id="todayTasksTitle">📋 今日任務看板</h2>
+      <button class="btn-danger" onclick="closeTodayTasks()">✖ 關閉</button>
+    </div>
+    <div class="card-list" id="todayTaskList" style="max-width: 800px; margin: 20px auto 0 auto; width: 100%;"></div>
+  </div>
+
+  <!-- 一般語音錄音 Modal -->
+  <div id="generalAudioModal" class="modal-backdrop">
+    <div class="modal-box" style="text-align:center;">
+      <h3 style="margin-bottom:15px;">🎙️ 班級記事語音錄音</h3>
+      <p style="color:#64748b; margin-bottom:20px;">請直接講出「明天考國語第一課」、「明天交數習」等內容</p>
+      <button id="generalRecordBtn" class="btn-warning" style="width:100%; padding:15px; font-size:1.2rem;" onclick="toggleGeneralRecording()">🎤 開始錄音</button>
+      <button class="btn-outline" style="color:#333; margin-top:15px; width:100%;" onclick="closeGeneralAudioModal()">關閉</button>
+    </div>
+  </div>
+
+  <!-- 缺交登記 Modal -->
+  <div id="missingModal" class="modal-backdrop">
+    <div class="modal-box">
+      <h3 style="margin-bottom:15px; text-align:center;">📋 缺交名單登記</h3>
+      
+      <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <button id="tabTypeTextBtn" class="btn-primary" style="flex:1; padding:8px;" onclick="switchMissingTab('text')">✍️ 打字輸入</button>
+        <button id="tabTypeVoiceBtn" class="btn-outline" style="flex:1; padding:8px; color:#333;" onclick="switchMissingTab('voice')">🎤 語音輸入</button>
+      </div>
+
+      <!-- 1. 打字輸入介面 -->
+      <div id="missingTextView">
+        <div style="margin-bottom:12px;">
+          <label style="font-weight:bold; display:block; margin-bottom:5px;">選擇作業/提醒項目（執行日±3天）：</label>
+          <select id="itemSelectText" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; font-size:1rem;"></select>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-weight:bold; display:block; margin-bottom:5px;">或自行輸入項目（若選單沒有）：</label>
+          <input type="text" id="itemCustomText" placeholder="例：[作業] 國語習作第一課" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; font-size:1rem;">
+        </div>
+        <div style="margin-bottom:15px;">
+          <label style="font-weight:bold; display:block; margin-bottom:5px;">輸入未交座號 (以小數點分隔)：</label>
+          <input type="text" id="seatInputText" placeholder="例如: 2.12.30" inputmode="decimal" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; font-size:1.1rem;">
+          <span style="font-size:0.85rem; color:#64748b;">💡 請點擊鍵盤的小數點做分隔，如：2.12.30</span>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn-outline" style="color:#333; flex:1;" onclick="closeMissingModal()">取消</button>
+          <button class="btn-success" style="flex:2;" onclick="submitMissingText()">🚀 送出登記</button>
+        </div>
+      </div>
+
+      <!-- 2. 語音輸入介面 -->
+      <div id="missingVoiceView" style="display:none;">
+        <div style="margin-bottom:12px;">
+          <label style="font-weight:bold; display:block; margin-bottom:5px;">選擇作業項目 (若口述有提到可不選)：</label>
+          <select id="itemSelectVoice" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; font-size:1rem;"></select>
+        </div>
+        <p style="color:#64748b; font-size:0.85rem; margin-bottom:15px; background:#f1f5f9; padding:10px; border-radius:6px;">
+          💡 <b>語音示範：</b>「理化講義缺交：5號 20號 40號」或「國語習作 3號 7號」
+        </p>
+        <div style="display:flex; gap:10px;">
+          <button class="btn-outline" style="color:#333; flex:1;" onclick="closeMissingModal()">取消</button>
+          <button id="missingRecordBtn" class="btn-warning" style="flex:2;" onclick="toggleMissingRecording()">🎤 開始錄音</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 提醒事項看板 Modal (恢復雙欄：明日 + 下週) -->
+  <div id="reminderOverlay" class="overlay-panel">
+    <div class="overlay-header">
+      <h2 style="font-size: 1.8rem;">📌 班級提醒事項看板</h2>
+      <button class="btn-danger" onclick="closeReminders()">✖ 關閉</button>
+    </div>
+    
+    <div class="reminder-split-container">
+      <!-- 欄位 1：明日提醒 -->
+      <div class="reminder-col">
+        <div class="col-title" id="tomorrowTitle">📅 明日提醒事項</div>
+        <div class="card-list" id="tomorrowReminderList"></div>
+      </div>
+      
+      <!-- 欄位 2：下周提醒 -->
+      <div class="reminder-col">
+        <div class="col-title">🗓️ 下週全週提醒</div>
+        <div class="card-list" id="nextWeekReminderList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="missingDashboardOverlay" class="overlay-panel">
+    <div class="overlay-header">
+      <h2 style="font-size: 1.8rem;">📋 全班缺繳銷案看板 (點擊座號銷案)</h2>
+      <button class="btn-danger" onclick="closeMissingDashboard()">✖ 關閉</button>
+    </div>
+    <div class="card-list" id="missingDashboardList"></div>
+  </div>
+
+  <div id="loadingSpinner">
+    <div class="spinner"></div>
+    <div id="loadingText">分析中，請稍候...</div>
+  </div>
+
+  <script>
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw14Hx0d5G9fwpOV9NmfGOVZUduLsoyeKbTiTVDh0vquFi8vYT8hqvdRBrngaG76Y_1yA/exec";
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const userRole = urlParams.get('role') || 'screen';
+    const pendingClearTimers = new Map();
+    let canvas, ctx, isDrawing = false, mode = 'pen';
+    let todayStr = '', tomorrowStr = '';
+    
+    let mediaRecorder, audioChunks = [];
+    let activeStream = null;
+    let isGeneralRecording = false, isMissingRecording = false;
+
+    async function callGAS(action, payload = {}) {
+      try {
+        const response = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action, ...payload })
+        });
+        return await response.json();
+      } catch (err) {
+        throw new Error("與伺服器通訊失敗：" + err);
+      }
+    }
+
+    window.onload = function() {
+      pingGAS();
+      initDates();
+
+      const validRoles = ['screen', 'teacher', 'parent'];
+      const currentRole = userRole.toLowerCase().trim();
+
+      if (!validRoles.includes(currentRole)) {
+        alert("⚠️ 網址參數無效，已自動重定向至家長查詢頁面。");
+        setupParentView();
+        return;
+      }
+
+      if (currentRole === 'teacher') {
+        document.getElementById('teacherScreen').style.display = 'flex';
+        document.getElementById('pageTitle').innerText = '📱 教師控制台';
+      } else if (currentRole === 'parent') {
+        setupParentView();
+      } else if (currentRole === 'screen') {
+        document.getElementById('mainScreen').style.display = 'flex';
+        document.getElementById('pageTitle').innerText = '智慧教室大屏看板';
+        initCanvas();
+      }
+    };
+
+    function initDates() {
+      const now = new Date();
+      todayStr = formatDate(now);
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrowStr = formatDate(tomorrow);
+      
+      document.getElementById('todayDateStr').innerText = `今日：${todayStr}`;
+      
+      const tomorrowTitleElem = document.getElementById('tomorrowTitle');
+      if (tomorrowTitleElem) {
+        tomorrowTitleElem.innerText = `📅 明日提醒事項 (${tomorrowStr})`;
+      }
+    }
+
+    function formatDate(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function getSupportedMimeType() {
+      const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/aac', 'audio/wav'];
+      for (let t of types) {
+        if (MediaRecorder.isTypeSupported(t)) return t;
+      }
+      return '';
+    }
+
+    async function startAudioRecording() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("⚠️ 您的瀏覽器不支援麥克風存取。");
+        return null;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        activeStream = stream;
+        const mimeType = getSupportedMimeType();
+        const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        return { recorder, mimeType: recorder.mimeType || mimeType || 'audio/mp4' };
+      } catch (err) {
+        alert("⚠️ 無法取得麥克風權限：\n" + err.message + "\n\n請確認手機 Safari 設定已允許開啟麥克風。");
+        return null;
+      }
+    }
+
+    function stopStreamTracks() {
+      if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+        activeStream = null;
+      }
+    }
+
+    /* ================= 大屏畫板邏輯 ================= */
+    function initCanvas() {
+      const container = document.querySelector('.canvas-container');
+      canvas = document.getElementById('paintCanvas');
+
+      setTimeout(() => {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        ctx = canvas.getContext('2d');
+        ctx.lineWidth = 4; 
+        ctx.lineCap = 'round'; 
+        ctx.strokeStyle = '#000000';
+      }, 50);
+
+      canvas.addEventListener('mousedown', e => { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); });
+      canvas.addEventListener('mousemove', e => { if (isDrawing) { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } });
+      canvas.addEventListener('mouseup', () => isDrawing = false);
+      canvas.addEventListener('touchstart', e => { e.preventDefault(); const t = e.touches[0]; const r = canvas.getBoundingClientRect(); isDrawing = true; ctx.beginPath(); ctx.moveTo(t.clientX - r.left, t.clientY - r.top); }, {passive:false});
+      canvas.addEventListener('touchmove', e => { e.preventDefault(); if (!isDrawing) return; const t = e.touches[0]; const r = canvas.getBoundingClientRect(); ctx.lineTo(t.clientX - r.left, t.clientY - r.top); ctx.stroke(); }, {passive:false});
+      canvas.addEventListener('touchend', () => isDrawing = false);
+    }
+
+    function setMode(m) {
+      mode = m;
+      document.getElementById('penBtn').className = (mode === 'pen') ? 'btn-primary square-btn' : 'btn-outline square-btn';
+      document.getElementById('eraserBtn').className = (mode === 'eraser') ? 'btn-primary square-btn' : 'btn-outline square-btn';
+      ctx.strokeStyle = (mode === 'pen') ? '#000000' : '#ffffff';
+      ctx.lineWidth = (mode === 'pen') ? 4 : 30;
+    }
+
+    function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+    async function submitHandwriting() {
+      showLoading("Gemini Vision 正在分析手寫內容...");
+      try {
+        const res = await callGAS('processHandwritingImage', {
+          base64Image: canvas.toDataURL('image/png'),
+          todayStr: todayStr
+        });
+        hideLoading();
+        let msg = "辨識與登錄完成！\n";
+        if (res.regularAdded !== undefined) msg += `一般提醒新增：${res.regularAdded} 筆\n`;
+        if (res.missingAdded !== undefined) msg += `缺交名單新增：${res.missingAdded} 筆`;
+        alert(msg);
+      } catch (err) { onError(err); }
+    }
+
+    /* ================= 教師端一般語音錄音 ================= */
+    function openGeneralAudioModal() { document.getElementById('generalAudioModal').style.display = 'flex'; }
+    function closeGeneralAudioModal() { 
+      if(isGeneralRecording) toggleGeneralRecording();
+      document.getElementById('generalAudioModal').style.display = 'none'; 
+    }
+
+    async function toggleGeneralRecording() {
+      const btn = document.getElementById('generalRecordBtn');
+      if (!isGeneralRecording) {
+        const audioSetup = await startAudioRecording();
+        if (!audioSetup) return;
+
+        mediaRecorder = audioSetup.recorder;
+        const currentMimeType = audioSetup.mimeType;
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+          stopStreamTracks();
+          showLoading("Gemini Audio 正在分析語音...");
+          const reader = new FileReader();
+          reader.readAsDataURL(new Blob(audioChunks, { type: currentMimeType }));
+          reader.onloadend = async () => {
+            try {
+              const res = await callGAS('processAudioInput', {
+                base64Audio: reader.result,
+                mimeType: currentMimeType,
+                todayStr: todayStr
+              });
+              hideLoading(); closeGeneralAudioModal();
+              if (res.success) {
+                alert(`語音登錄完成！共新增 ${res.added} 筆提醒事項`);
+              } else {
+                alert("分析失敗：" + res.error);
+              }
+            } catch (err) { onError(err); }
+          };
+        };
+
+        mediaRecorder.start();
+        isGeneralRecording = true;
+        btn.innerText = '🛑 停止並傳送'; btn.className = 'btn-danger';
+      } else {
+        mediaRecorder.stop();
+        isGeneralRecording = false;
+        btn.innerText = '🎤 開始錄音'; btn.className = 'btn-warning';
+      }
+    }
+
+    /* ================= 今日任務 Overlay ================= */
+    async function openTodayTasks() {
+      document.getElementById('todayTasksOverlay').classList.add('active');
+      const titleElem = document.getElementById('todayTasksTitle');
+      if (titleElem) titleElem.innerText = `📋 今日任務看板 (${todayStr})`;
+      
+      showLoading("載入今日任務中...");
+      try {
+        const tasks = await callGAS('getTodayTasks', { todayStr: todayStr });
+        renderTodayTasks(tasks);
+      } catch (err) {
+        onError(err);
+      }
+    }
+
+    function closeTodayTasks() {
+      document.getElementById('todayTasksOverlay').classList.remove('active');
+    }
+
+    function renderTodayTasks(tasks) {
+      hideLoading();
+      const taskContainer = document.getElementById('todayTaskList');
+      const taskList = Array.isArray(tasks) ? tasks : [];
+      
+      if (taskList.length === 0) {
+        taskContainer.innerHTML = '<div style="text-align:center; font-size:1.2rem; color:#64748b; padding:40px;">🎉 今日尚無安排任務！</div>';
+        return;
+      }
+      
+      taskContainer.innerHTML = '';
+      taskList.forEach(it => {
+        taskContainer.innerHTML += `
+          <div class="reminder-card ${it.type}">
+            <div class="card-type type-${it.type}">${it.type}</div>
+            <div class="card-content" style="font-size:1.2rem;">${it.range}</div>
+          </div>`;
+      });
+    }
+
+    /* ================= 提醒事項 Overlay (雙欄：明日 + 下週) ================= */
+    async function openReminders() {
+      document.getElementById('reminderOverlay').classList.add('active');
+      
+      const tomorrowTitleElem = document.getElementById('tomorrowTitle');
+      if (tomorrowTitleElem) tomorrowTitleElem.innerText = `📅 明日提醒事項 (${tomorrowStr})`;
+      
+      showLoading("載入提醒事項中...");
+      
+      try {
+        const [tomorrowItems, nextWeekItems] = await Promise.all([
+          callGAS('getTomorrowReminders', { tomorrowStr: tomorrowStr }),
+          callGAS('getNextWeekReminders', { todayStr: todayStr })
+        ]);
+        
+        renderReminders(tomorrowItems, nextWeekItems);
+      } catch (err) { 
+        onError(err); 
+      }
+    }
+
+    function closeReminders() { document.getElementById('reminderOverlay').classList.remove('active'); }
+
+    function renderReminders(tomorrowItems, nextWeekItems) {
+      hideLoading();
+      
+      const tomorrowList = Array.isArray(tomorrowItems) ? tomorrowItems : [];
+      const nextWeekList = Array.isArray(nextWeekItems) ? nextWeekItems : [];
+
+      // 渲染明日提醒
+      const tomorrowContainer = document.getElementById('tomorrowReminderList');
+      tomorrowContainer.innerHTML = tomorrowList.length === 0 
+        ? '<div style="text-align:center; font-size:1.1rem; color:#64748b; margin-top:20px;">🎉 明日尚無提醒事項</div>' 
+        : '';
+      tomorrowList.forEach(it => {
+        tomorrowContainer.innerHTML += `
+          <div class="reminder-card ${it.type}">
+            <div class="card-type type-${it.type}">${it.type}</div>
+            <div class="card-content">${it.range}</div>
+          </div>`;
+      });
+
+      // 渲染下周提醒
+      const nextWeekContainer = document.getElementById('nextWeekReminderList');
+      nextWeekContainer.innerHTML = nextWeekList.length === 0 
+        ? '<div style="text-align:center; font-size:1.1rem; color:#64748b; margin-top:20px;">🎉 下週尚無提醒事項</div>' 
+        : '';
+      nextWeekList.forEach(it => {
+        nextWeekContainer.innerHTML += `
+          <div class="reminder-card ${it.type}">
+            <div class="card-type type-${it.type}">${it.type}</div>
+            <div class="card-content">
+              <span style="font-size:0.9rem; color:#64748b; display:block;">🗓️ ${it.dateLabel}</span>
+              ${it.range}
+            </div>
+          </div>`;
+      });
+    }
+
+    /* ================= 缺交銷案看板 ================= */
+    async function openMissingDashboard() {
+      document.getElementById('missingDashboardOverlay').classList.add('active');
+      showLoading("載入缺繳看板...");
+      try {
+        const grouped = await callGAS('getUnsettledMissingItems');
+        renderMissingDashboard(grouped);
+      } catch (err) { onError(err); }
+    }
+    
+    function closeMissingDashboard() { document.getElementById('missingDashboardOverlay').classList.remove('active'); }
+
+    function renderMissingDashboard(grouped) {
+      hideLoading();
+      const list = document.getElementById('missingDashboardList');
+      list.innerHTML = '';
+      const keys = Object.keys(grouped);
+
+      if (keys.length === 0) {
+        list.innerHTML = '<div style="text-align:center; font-size:1.3rem; color:#10b981; margin-top:30px;">🎉 全班作業均已繳齊！</div>';
+        return;
+      }
+
+      keys.forEach(itemTitle => {
+        const studentBadges = grouped[itemTitle].map(no => 
+          `<button class="student-btn" onclick="clearSingleStudent(this, '${no}', '${itemTitle}')">${no} 號 (銷案)</button>`
+        ).join('');
+
+        list.innerHTML += `
+          <div class="reminder-card 作業" style="flex-direction:column; align-items:flex-start;">
+            <div style="font-size:1.2rem; font-weight:bold; color:#1e293b;">📌 ${itemTitle} (剩 ${grouped[itemTitle].length} 人)</div>
+            <div class="student-badge-group">${studentBadges}</div>
+          </div>`;
+      });
+    }
+
+    async function clearSingleStudent(btn, studentNo, itemTitle) {
+      const key = `${itemTitle}_${studentNo}`;
+
+      if (pendingClearTimers.has(key)) {
+        clearTimeout(pendingClearTimers.get(key));
+        pendingClearTimers.delete(key);
+        btn.style.backgroundColor = '#ef4444';
+        btn.innerText = `${studentNo} 號 (銷案)`;
+        return;
+      }
+
+      btn.style.backgroundColor = '#10b981';
+      btn.innerText = `${studentNo} 號 (點擊撤銷)`;
+
+      const timer = setTimeout(async () => {
+        pendingClearTimers.delete(key);
+        try {
+          await callGAS('markSingleStudentCompleted', { studentNo, itemTitle });
+          btn.remove();
+        } catch (err) {
+          btn.style.backgroundColor = '#ef4444';
+          btn.innerText = `${studentNo} 號 (銷案)`;
+          onError(err);
+        }
+      }, 3000);
+
+      pendingClearTimers.set(key, timer);
+    }
+
+    function switchMissingTab(mode) {
+      const isText = mode === 'text';
+      document.getElementById('missingTextView').style.display = isText ? 'block' : 'none';
+      document.getElementById('missingVoiceView').style.display = isText ? 'none' : 'block';
+  
+      document.getElementById('tabTypeTextBtn').className = isText ? 'btn-primary' : 'btn-outline';
+      document.getElementById('tabTypeTextBtn').style.color = isText ? '#fff' : '#333';
+      document.getElementById('tabTypeVoiceBtn').className = isText ? 'btn-outline' : 'btn-primary';
+      document.getElementById('tabTypeVoiceBtn').style.color = isText ? '#333' : '#fff';
+    }
+
+    /* ================= 缺交語音登記 Modal ================= */
+    async function openMissingModal() {
+      document.getElementById('missingModal').style.display = 'flex';
+      switchMissingTab('text');
+      
+      const selectText = document.getElementById('itemSelectText');
+      const selectVoice = document.getElementById('itemSelectVoice');
+      selectText.innerHTML = '<option>載入中...</option>';
+      selectVoice.innerHTML = '<option>載入中...</option>';
+
+      try {
+        const items = await callGAS('getRecentAssignments', { todayStr: todayStr });
+        const optionsHtml = items.length === 0 
+          ? '<option value="">無最近作業項目</option>' 
+          : items.map(it => `<option value="${it}">${it}</option>`).join('');
+
+        selectText.innerHTML = optionsHtml;
+        selectVoice.innerHTML = '<option value="">-- 自動從語音辨識或選擇此處 --</option>' + optionsHtml;
+      } catch (err) { onError(err); }
+    }
+
+    function closeMissingModal() {
+      if (isMissingRecording) toggleMissingRecording();
+      document.getElementById('missingModal').style.display = 'none'; 
+      document.getElementById('seatInputText').value = '';
+      document.getElementById('itemCustomText').value = '';
+    }
+
+    async function submitMissingText() {
+      const selectVal = document.getElementById('itemSelectText').value;
+      const customVal = document.getElementById('itemCustomText').value.trim();
+      const targetItem = customVal !== "" ? customVal : selectVal;
+
+      const rawInput = document.getElementById('seatInputText').value.trim();
+
+      if (!targetItem || targetItem === "無最近作業項目") { alert("請先選擇或輸入作業/提醒項目！"); return; }
+      if (!rawInput) { alert("請輸入座號！"); return; }
+
+      const studentNos = rawInput
+        .split(/[.,\s，。]+/)
+        .map(s => s.trim().replace(/\D/g, ''))
+        .filter(s => s.length > 0);
+
+      if (studentNos.length === 0) {
+        alert("請輸入有效的數字座號（例如: 2.12.30）");
+        return;
+      }
+
+      showLoading("正在登記缺交名單...");
+      try {
+        const res = await callGAS('submitMissingText', {
+          targetItem: targetItem,
+          studentNos: studentNos,
+          todayStr: todayStr
+        });
+        hideLoading();
+        closeMissingModal();
+        if (res.success) {
+          alert(`登記成功！新增 ${res.count} 位缺交記錄`);
+        } else {
+          alert("登記失敗：" + res.error);
+        }
+      } catch (err) { onError(err); }
+    }
+
+    async function toggleMissingRecording() {
+      const selectedItem = document.getElementById('itemSelectVoice').value;
+      const btn = document.getElementById('missingRecordBtn');
+
+      if (!isMissingRecording) {
+        const audioSetup = await startAudioRecording();
+        if (!audioSetup) return;
+
+        mediaRecorder = audioSetup.recorder;
+        const currentMimeType = audioSetup.mimeType;
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+          stopStreamTracks();
+          showLoading("Gemini 正在辨識作業與座號...");
+          const reader = new FileReader();
+          reader.readAsDataURL(new Blob(audioChunks, { type: currentMimeType }));
+          reader.onloadend = async () => {
+            try {
+              const res = await callGAS('processMissingAudio', {
+                base64Audio: reader.result,
+                mimeType: currentMimeType,
+                defaultItem: selectedItem,
+                todayStr: todayStr
+              });
+              hideLoading(); closeMissingModal();
+              if (res.success) {
+                alert(`登記成功！新增 ${res.count} 位缺交記錄`);
+              } else {
+                alert("分析失敗：" + res.error);
+              }
+            } catch (err) { onError(err); }
+          };
+        };
+
+        mediaRecorder.start();
+        isMissingRecording = true;
+        btn.innerText = '🛑 停止並傳送'; btn.className = 'btn-danger';
+      } else {
+        mediaRecorder.stop();
+        isMissingRecording = false;
+        btn.innerText = '🎤 開始錄音'; btn.className = 'btn-warning';
+      }
+    }
+
+    /* ================= 家長端視角 ================= */
+    async function setupParentView() {
+      document.getElementById('headerBtns').style.display = 'none';
+      document.getElementById('pageTitle').innerText = '班級每日聯絡簿';
+      document.getElementById('parentScreen').style.display = 'block';
+
+      try {
+        const [tomorrowItems, nextWeekItems] = await Promise.all([
+          callGAS('getTomorrowReminders', { tomorrowStr }),
+          callGAS('getNextWeekReminders', { todayStr })
+        ]);
+
+        const tomorrowList = document.getElementById('parentReminderList');
+        const tItems = Array.isArray(tomorrowItems) ? tomorrowItems : [];
+        tomorrowList.innerHTML = tItems.length === 0 
+          ? '<div style="color:#64748b; font-size:0.95rem;">🎉 明日尚無提醒事項</div>' 
+          : '';
+        tItems.forEach(it => {
+          tomorrowList.innerHTML += `
+            <div class="reminder-card ${it.type}">
+              <div class="card-type type-${it.type}">${it.type}</div>
+              <div class="card-content">${it.range}</div>
+            </div>`;
+        });
+
+        const nextWeekList = document.getElementById('parentNextWeekList');
+        const nwItems = Array.isArray(nextWeekItems) ? nextWeekItems : [];
+        nextWeekList.innerHTML = nwItems.length === 0 
+          ? '<div style="color:#64748b; font-size:0.95rem;">🎉 下週尚無提醒事項</div>' 
+          : '';
+        nwItems.forEach(it => {
+          nextWeekList.innerHTML += `
+            <div class="reminder-card ${it.type}">
+              <div class="card-type type-${it.type}">${it.type}</div>
+              <div class="card-content">
+                <span style="font-size:0.85rem; color:#64748b; display:block;">🗓️ ${it.dateLabel}</span>
+                ${it.range}
+              </div>
+            </div>`;
+        });
+
+      } catch (err) { 
+        onError(err); 
+      }
+    }
+
+    async function handleParentLogin() {
+      const seatNo = document.getElementById('loginSeatNo').value;
+      const pwd = document.getElementById('loginPassword').value;
+      if (!seatNo || !pwd) { alert("請輸入座號與密碼！"); return; }
+
+      showLoading("驗證中...");
+      try {
+        const res = await callGAS('validateStudentLogin', { seatNo, pwd });
+        hideLoading();
+        if (res.success) {
+          document.getElementById('loginCard').style.display = 'none';
+          document.getElementById('studentDashboard').style.display = 'block';
+          document.getElementById('welcomeMsg').innerText = `👤 ${res.studentNo}號 ${res.studentName}`;
+          loadStudentMissingItems(res.studentNo);
+        } else {
+          alert(res.message);
+        }
+      } catch (err) { onError(err); }
+    }
+
+    function handleParentLogout() {
+      document.getElementById('studentDashboard').style.display = 'none';
+      document.getElementById('loginCard').style.display = 'block';
+    }
+
+    async function loadStudentMissingItems(studentNo) {
+      showLoading("讀取缺交明細...");
+      try {
+        const items = await callGAS('getStudentMissingItems', { studentNo });
+        hideLoading();
+        const list = document.getElementById('personalMissingList');
+        list.innerHTML = items.length === 0 ? '<div style="color:#10b981; font-weight:bold;">🎉 太棒了！無任何缺交項目！</div>' : '';
+        items.forEach(it => {
+          list.innerHTML += `<div class="reminder-card 考試" style="border-left-color:#ef4444;"><div class="card-content" style="margin-left:0;">⚠️ ${it.item} <span style="font-size:0.85rem; color:#64748b;">(${it.date})</span></div></div>`;
+        });
+      } catch (err) { onError(err); }
+    }
+
+    function showLoading(text) { document.getElementById('loadingText').innerText = text; document.getElementById('loadingSpinner').style.display = 'flex'; }
+    function hideLoading() { document.getElementById('loadingSpinner').style.display = 'none'; }
+    function onError(err) { hideLoading(); alert("發生錯誤：" + err); }
+    
+    function pingGAS() {
+      fetch(GAS_WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'ping' })
+      }).catch(() => {});
+    }
+
+    (function enableToolbarDrag() {
+      const toolbar = document.getElementById('draggableToolbar');
+      if (!toolbar) return;
+
+      let isDragging = false;
+      let offsetX = 0, offsetY = 0;
+
+      toolbar.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('button')) return;
+        
+        isDragging = true;
+        toolbar.style.transform = 'none';
+        offsetX = e.clientX - toolbar.getBoundingClientRect().left;
+        offsetY = e.clientY - toolbar.getBoundingClientRect().top;
+        toolbar.setPointerCapture(e.pointerId);
+      });
+
+      toolbar.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        const mainRect = document.getElementById('mainScreen').getBoundingClientRect();
+        let left = e.clientX - mainRect.left - offsetX;
+        let top = e.clientY - mainRect.top - offsetY;
+
+        left = Math.max(0, Math.min(left, mainRect.width - toolbar.offsetWidth));
+        top = Math.max(0, Math.min(top, mainRect.height - toolbar.offsetHeight));
+
+        toolbar.style.left = left + 'px';
+        toolbar.style.top = top + 'px';
+      });
+
+      toolbar.addEventListener('pointerup', (e) => {
+        isDragging = false;
+        try { toolbar.releasePointerCapture(e.pointerId); } catch(err){}
+      });
+    })();
+  </script>
+</body>
+</html>
