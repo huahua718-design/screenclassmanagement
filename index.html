@@ -167,7 +167,7 @@
       <button class="btn-danger square-btn" onclick="clearCanvas()">
         <span>🗑️</span><span>清除</span>
       </button>
-      <button class="btn-success square-btn" onclick="submitHandwriting()">
+      <button class="btn-success square-btn" onclick="()">
         <span>🚀</span><span>送出</span>
       </button>
     </div>
@@ -472,6 +472,7 @@ function initCanvas() {
     ctx.lineCap = 'round';   // 線條兩端圓滑
     ctx.lineJoin = 'round';  // 💡 關鍵：線條轉折處圓滑 (消除鋸齒與尖角)
     ctx.strokeStyle = '#000000';
+    restoreUnsentHandwriting();
   }, 50);
 
   // 繪圖事件監聽 (座標計算保持不變)
@@ -522,19 +523,41 @@ function initCanvas() {
     function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
     async function submitHandwriting() {
-      showLoading("Gemini Vision 正在分析手寫內容...");
-      try {
-        const res = await callGAS('processHandwritingImage', {
-          base64Image: canvas.toDataURL('image/png'),
-          todayStr: todayStr
-        });
-        hideLoading();
-        let msg = "辨識與登錄完成！\n";
-        if (res.regularAdded !== undefined) msg += `一般提醒新增：${res.regularAdded} 筆\n`;
-        if (res.missingAdded !== undefined) msg += `缺交名單新增：${res.missingAdded} 筆`;
-        alert(msg);
-      } catch (err) { onError(err); }
+  // 1. 將 PNG 改為 JPEG 並壓縮品質至 0.7（大幅縮減 80% 檔案大小，加快弱網傳送，且節省備份空間）
+  const base64Image = canvas.toDataURL('image/jpeg', 0.7);
+
+  showLoading("Gemini Vision 正在分析手寫內容...");
+
+  try {
+    const res = await callGAS('processHandwritingImage', {
+      base64Image: base64Image,
+      todayStr: todayStr
+    });
+
+    hideLoading();
+
+    // 2. 傳送成功：清除本地暫存，並清空畫布
+    localStorage.removeItem('unsentHandwriting');
+
+    let msg = "辨識與登錄完成！\n";
+    if (res.regularAdded !== undefined) msg += `一般提醒新增：${res.regularAdded} 筆\n`;
+    if (res.missingAdded !== undefined) msg += `缺交名單新增：${res.missingAdded} 筆`;
+    alert(msg);
+
+    clearCanvas(); // 成功後清空畫畫區域
+
+  } catch (err) {
+    hideLoading();
+
+    // 3. 傳送失敗（如網路斷訊）：將畫面自動備份至瀏覽器本地
+    try {
+      localStorage.setItem('unsentHandwriting', base64Image);
+      alert("⚠️ 網路連線失敗！手寫畫面已自動備份在本地。\n請等待網路恢復後再次點擊「送出」。");
+    } catch (e) {
+      alert("⚠️ 傳送失敗，且本地儲存空間不足，請確認網路連線！");
     }
+  }
+}
 
     /* ================= 教師端一般語音錄音 ================= */
     function openGeneralAudioModal() { document.getElementById('generalAudioModal').style.display = 'flex'; }
@@ -585,7 +608,20 @@ function initCanvas() {
         btn.innerText = '🎤 開始錄音'; btn.className = 'btn-warning';
       }
     }
-
+// 檢查是否有上次網路異常未送出的畫面，並自動還原
+function restoreUnsentHandwriting() {
+  const savedImage = localStorage.getItem('unsentHandwriting');
+  if (savedImage) {
+    if (confirm("偵測到上次因網路問題未送出的手寫備份，是否將其還原至畫布？")) {
+      const img = new Image();
+      img.src = savedImage;
+      img.onload = () => {
+        const dpr = window.devicePixelRatio || 1;
+        ctx.drawImage(img, 0, 0, canvas.width / dpr, canvas.height / dpr);
+      };
+    }
+  }
+}
     /* ================= 今日任務 Overlay ================= */
     async function openTodayTasks() {
       document.getElementById('todayTasksOverlay').classList.add('active');
