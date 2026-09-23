@@ -20,6 +20,35 @@
     .btn-success { background: #10b981; color: white; }
     .btn-purple { background: #8b5cf6; color: white; }
     .btn-outline { background: transparent; border: 2px solid #64748b; color: #f8fafc; }
+    /* 2. 在下方直接加上新增的雙欄卡片樣式 */
+.btn-grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.mobile-btn-card {
+  padding: 12px 14px !important;
+  margin-bottom: 0 !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mobile-btn-card h3 {
+  font-size: 1rem !important;
+  margin-bottom: 4px !important;
+  word-break: break-word;
+}
+
+.mobile-btn-card p {
+  font-size: 0.8rem !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+  color: #666;
+}
 
     main { flex: 1; position: relative; display: flex; flex-direction: column; padding: 15px; }
     .canvas-container { flex: 1; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
@@ -177,40 +206,49 @@
     </div>
   </main>
 
-  <div id="teacherScreen" class="mobile-container" style="display:none;">
-    
-    <div class="mobile-btn-card" style="border-top: 5px solid #f59e0b;" onclick="openGeneralAudioModal()">
+  <div id="teacherScreen">
+  <!-- 第一組：班級記事語音 + 拍照/上傳黑板辨識 -->
+  <div class="btn-grid-row">
+    <div class="mobile-btn-card" style="border-top: 5px solid #06b6d4;" onclick="startVoiceRecord('regular')">
       <h3>🎙️ 班級記事語音錄音</h3>
       <p>口述新增明天考試、作業或提醒事項</p>
     </div>
-    <!-- 新增：手機拍照/選圖卡片 -->
+
     <div class="mobile-btn-card" style="border-top: 5px solid #06b6d4;" onclick="triggerCamera()">
       <h3>📷 拍照/上傳黑板辨識</h3>
-      <p>拍攝黑板手寫或作業內容，直接傳送 Gemini 辨識</p>
+      <p>拍攝黑板手寫或作業內容，傳至 Gemini 辨識</p>
     </div>
-    <!-- 隱藏的檔案/相機輸入框 (capture="environment" 會預設開啟手機後鏡頭) -->
-<input type="file" id="teacherCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleTeacherPhoto(event)">
+  </div>
 
-    <div class="mobile-btn-card" style="border-top: 5px solid #8b5cf6;" onclick="openMissingModal()">
+  <!-- 第二組：缺交語音登記 + 全班缺交銷案看板 -->
+  <div class="btn-grid-row">
+    <div class="mobile-btn-card" style="border-top: 5px solid #a855f7;" onclick="startVoiceRecord('missing')">
       <h3>📋 缺交語音登記</h3>
       <p>選取作業項目，口述未繳學生座號</p>
     </div>
-    
-    <div class="mobile-btn-card" style="border-top: 5px solid #10b981;" onclick="openTodayTasks()">
-      <h3>📋 今日任務查詢</h3>
-      <p>查看今日需執行的作業與提醒事項</p>
-    </div>
 
-    <div class="mobile-btn-card" style="border-top: 5px solid #3b82f6;" onclick="openReminders()">
-      <h3>📅 查看提醒事項看板</h3>
-      <p>預覽明日與下週之班級提醒事項</p>
-    </div>
-
-    <div class="mobile-btn-card" style="border-top: 5px solid #ef4444;" onclick="openMissingDashboard()">
+    <div class="mobile-btn-card" style="border-top: 5px solid #ef4444;" onclick="showTeacherSection('missingBoard')">
       <h3>📊 全班缺交銷案看板</h3>
       <p>點擊缺交座號按鈕，直接快速完成銷案</p>
     </div>
   </div>
+
+  <!-- 第三組：今日任務查詢 + 查看提醒事項看板 -->
+  <div class="btn-grid-row">
+    <div class="mobile-btn-card" style="border-top: 5px solid #3b82f6;" onclick="showTeacherSection('todayTasks')">
+      <h3>📝 今日任務查詢</h3>
+      <p>查看今日需執行的作業與提醒事項</p>
+    </div>
+
+    <div class="mobile-btn-card" style="border-top: 5px solid #3b82f6;" onclick="showTeacherSection('reminderBoard')">
+      <h3>🗓️ 查看提醒事項看板</h3>
+      <p>預覽明日與下週之班級提醒事項</p>
+    </div>
+  </div>
+
+  <!-- 💡 放在這裡：隱藏的相機/檔案輸入框 (不會影響任何畫面排版) -->
+  <input type="file" id="teacherCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleTeacherPhoto(event)">
+</div>
 
   <div id="parentScreen" class="mobile-container" style="display:none;">
     <div id="loginCard" style="background:white; padding:25px; border-radius:12px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
