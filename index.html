@@ -400,31 +400,31 @@
     }
 
     window.onload = function() {
-      pingGAS();
-      initDates();
+  pingGAS();
+  initDates();
 
-      const validRoles = ['screen', 'teacher', 'parent'];
-      const currentRole = userRole.toLowerCase().trim();
+  const validRoles = ['screen', 'teacher', 'parent'];
+  const currentRole = userRole.toLowerCase().trim();
 
-      if (!validRoles.includes(currentRole)) {
-        alert("⚠️ 網址參數無效，已自動重定向至家長查詢頁面。");
-        setupParentView();
-        return;
-      }
+  if (!validRoles.includes(currentRole)) {
+    alert("⚠️ 網址參數無效，已自動重定向至家長查詢頁面。");
+    setupParentView();
+    return;
+  }
 
-      if (currentRole === 'teacher') {
-        document.getElementById('teacherScreen').style.display = 'flex';
-        document.getElementById('headerBtns').style.display = 'none'; // 隱藏頂部三大按鈕
-        document.getElementById('pageTitle').innerText = '📱 教師控制台';
-      } else if (currentRole === 'parent') {
-        setupParentView();
-      } else if (currentRole === 'screen') {
-        document.getElementById('mainScreen').style.display = 'flex';
-        document.getElementById('headerBtns').style.display = 'flex';
-        document.getElementById('pageTitle').innerText = '智慧教室大屏看板';
-        ;
-      }
-    };
+  if (currentRole === 'teacher') {
+    document.getElementById('teacherScreen').style.display = 'flex';
+    document.getElementById('headerBtns').style.display = 'none';
+    document.getElementById('pageTitle').innerText = '📱 教師控制台';
+  } else if (currentRole === 'parent') {
+    setupParentView();
+  } else if (currentRole === 'screen') {
+    document.getElementById('mainScreen').style.display = 'flex';
+    document.getElementById('headerBtns').style.display = 'flex';
+    document.getElementById('pageTitle').innerText = '智慧教室大屏看板';
+    initCanvas(); // ★ 關鍵修復：補上原本遺漏的畫布初始化呼叫
+  }
+};
 
     function initDates() {
       const now = new Date();
@@ -482,6 +482,7 @@
 function initCanvas() {
   const container = document.querySelector('.canvas-container');
   canvas = document.getElementById('paintCanvas');
+  if (!canvas || !container) return;
 
   setTimeout(() => {
     const dpr = window.devicePixelRatio || 1;
@@ -505,13 +506,14 @@ function initCanvas() {
     restoreUnsentHandwriting();
   }, 100);
 
-  // 計算相對於 Canvas 的精準座標 (同時支援滑鼠與觸控)
+  // 精準計算相對於 Canvas 的座標 (穩定支援滑鼠與觸控)
   function getPos(e) {
     const r = canvas.getBoundingClientRect();
-    if (e.touches && e.touches.length > 0) {
+    const touch = (e.touches && e.touches.length > 0) ? e.touches[0] : null;
+    if (touch) {
       return {
-        x: e.touches[0].clientX - r.left,
-        y: e.clientY ? e.clientY - r.top : e.touches[0].clientY - r.top
+        x: touch.clientX - r.left,
+        y: touch.clientY - r.top
       };
     }
     return {
@@ -522,10 +524,11 @@ function initCanvas() {
 
   // 開始書寫
   function startDrawing(e) {
+    if (!ctx) return; // 防呆：確保 Context 已準備好
     e.preventDefault();
     isDrawing = true;
 
-    // ★ 防錯關鍵：每次落筆前，強制根據當前模式重設畫筆顏色與粗細
+    // 每次落筆前，強制根據當前模式重設畫筆顏色與粗細
     ctx.strokeStyle = (mode === 'pen') ? '#000000' : '#ffffff';
     ctx.lineWidth = (mode === 'pen') ? 4 : 30;
     ctx.lineCap = 'round';
@@ -538,7 +541,7 @@ function initCanvas() {
 
   // 書寫中
   function draw(e) {
-    if (!isDrawing) return;
+    if (!isDrawing || !ctx) return;
     e.preventDefault();
     const pos = getPos(e);
     ctx.lineTo(pos.x, pos.y);
