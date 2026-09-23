@@ -178,19 +178,27 @@
   </main>
 
   <div id="teacherScreen" class="mobile-container" style="display:none;">
-    <div class="mobile-btn-card" style="border-top: 5px solid #10b981;" onclick="openTodayTasks()">
-      <h3>📋 今日任務查詢</h3>
-      <p>查看今日需執行的作業與提醒事項</p>
-    </div>
-
+    
     <div class="mobile-btn-card" style="border-top: 5px solid #f59e0b;" onclick="openGeneralAudioModal()">
       <h3>🎙️ 班級記事語音錄音</h3>
       <p>口述新增明天考試、作業或提醒事項</p>
     </div>
+    <!-- 新增：手機拍照/選圖卡片 -->
+    <div class="mobile-btn-card" style="border-top: 5px solid #06b6d4;" onclick="triggerCamera()">
+      <h3>📷 拍照/上傳黑板辨識</h3>
+      <p>拍攝黑板手寫或作業內容，直接傳送 Gemini 辨識</p>
+    </div>
+    <!-- 隱藏的檔案/相機輸入框 (capture="environment" 會預設開啟手機後鏡頭) -->
+<input type="file" id="teacherCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleTeacherPhoto(event)">
 
     <div class="mobile-btn-card" style="border-top: 5px solid #8b5cf6;" onclick="openMissingModal()">
       <h3>📋 缺交語音登記</h3>
       <p>選取作業項目，口述未繳學生座號</p>
+    </div>
+    
+    <div class="mobile-btn-card" style="border-top: 5px solid #10b981;" onclick="openTodayTasks()">
+      <h3>📋 今日任務查詢</h3>
+      <p>查看今日需執行的作業與提醒事項</p>
     </div>
 
     <div class="mobile-btn-card" style="border-top: 5px solid #3b82f6;" onclick="openReminders()">
