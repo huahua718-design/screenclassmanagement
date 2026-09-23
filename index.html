@@ -1029,24 +1029,34 @@
     }
 
     async function handleParentLogin() {
-      const seatNo = document.getElementById('loginSeatNo').value;
-      const pwd = document.getElementById('loginPassword').value;
-      if (!seatNo || !pwd) { alert("請輸入座號與密碼！"); return; }
+  const seatNo = document.getElementById('loginSeatNo').value.trim();
+  let pwd = document.getElementById('loginPassword').value.trim();
+  
+  if (!seatNo || !pwd) { 
+    alert("請輸入座號與密碼！"); 
+    return; 
+  }
 
-      showLoading("驗證中...");
-      try {
-        const res = await callGAS('validateStudentLogin', { seatNo, pwd });
-        hideLoading();
-        if (res.success) {
-          document.getElementById('loginCard').style.display = 'none';
-          document.getElementById('studentDashboard').style.display = 'block';
-          document.getElementById('welcomeMsg').innerText = `👤 ${res.studentNo}號 ${res.studentName}`;
-          loadStudentMissingItems(res.studentNo);
-        } else {
-          alert(res.message);
-        }
-      } catch (err) { onError(err); }
+  // 前端自動補零至 4 位數
+  pwd = pwd.padStart(4, '0');
+
+  showLoading("驗證中...");
+  try {
+    const res = await callGAS('validateStudentLogin', { seatNo, pwd });
+    hideLoading();
+    
+    if (res.success) {
+      document.getElementById('loginCard').style.display = 'none';
+      document.getElementById('studentDashboard').style.display = 'block';
+      document.getElementById('welcomeMsg').innerText = `👤 ${res.studentNo}號 ${res.studentName}`;
+      loadStudentMissingItems(res.studentNo);
+    } else {
+      alert(res.message);
     }
+  } catch (err) { 
+    onError(err); 
+  }
+}
 
     function handleParentLogout() {
       document.getElementById('studentDashboard').style.display = 'none';
