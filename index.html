@@ -422,7 +422,7 @@
         document.getElementById('mainScreen').style.display = 'flex';
         document.getElementById('headerBtns').style.display = 'flex';
         document.getElementById('pageTitle').innerText = '智慧教室大屏看板';
-        initCanvas();
+        ;
       }
     };
 
@@ -477,59 +477,63 @@
       }
     }
 
-    /* ================= 大屏畫板邏輯 ================= */
-    function initCanvas() {
-      const container = document.querySelector('.canvas-container');
-      canvas = document.getElementById('paintCanvas');
+    /* ================= 大屏畫板邏輯 (已修復白底與保留畫面) ================= */
+function initCanvas() {
+  const container = document.querySelector('.canvas-container');
+  canvas = document.getElementById('paintCanvas');
 
-      setTimeout(() => {
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = container.clientWidth * dpr;
-        canvas.height = container.clientHeight * dpr;
+  setTimeout(() => {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = container.clientWidth * dpr;
+    canvas.height = container.clientHeight * dpr;
 
-        ctx = canvas.getContext('2d');
-        ctx.scale(dpr, dpr);
+    ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
 
-        ctx.lineWidth = 4; 
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.strokeStyle = '#000000';
-        restoreUnsentHandwriting();
-      }, 50);
+    // ★ 關鍵修復：預設為畫布填滿白色背景，避免輸出 JPEG 時背景變全黑
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-      canvas.addEventListener('mousedown', e => { 
-        isDrawing = true; 
-        ctx.beginPath(); 
-        ctx.moveTo(e.offsetX, e.offsetY); 
-      });
-      canvas.addEventListener('mousemove', e => { 
-        if (isDrawing) { 
-          ctx.lineTo(e.offsetX, e.offsetY); 
-          ctx.stroke(); 
-        } 
-      });
-      canvas.addEventListener('mouseup', () => isDrawing = false);
-      
-      canvas.addEventListener('touchstart', e => { 
-        e.preventDefault(); 
-        const t = e.touches[0]; 
-        const r = canvas.getBoundingClientRect(); 
-        isDrawing = true; 
-        ctx.beginPath(); 
-        ctx.moveTo(t.clientX - r.left, t.clientY - r.top); 
-      }, {passive:false});
-      
-      canvas.addEventListener('touchmove', e => { 
-        e.preventDefault(); 
-        if (!isDrawing) return; 
-        const t = e.touches[0]; 
-        const r = canvas.getBoundingClientRect(); 
-        ctx.lineTo(t.clientX - r.left, t.clientY - r.top); 
-        ctx.stroke(); 
-      }, {passive:false});
-      
-      canvas.addEventListener('touchend', () => isDrawing = false);
-    }
+    ctx.lineWidth = 4; 
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#000000';
+    restoreUnsentHandwriting();
+  }, 50);
+
+  canvas.addEventListener('mousedown', e => { 
+    isDrawing = true; 
+    ctx.beginPath(); 
+    ctx.moveTo(e.offsetX, e.offsetY); 
+  });
+  canvas.addEventListener('mousemove', e => { 
+    if (isDrawing) { 
+      ctx.lineTo(e.offsetX, e.offsetY); 
+      ctx.stroke(); 
+    } 
+  });
+  canvas.addEventListener('mouseup', () => isDrawing = false);
+  
+  canvas.addEventListener('touchstart', e => { 
+    e.preventDefault(); 
+    const t = e.touches[0]; 
+    const r = canvas.getBoundingClientRect(); 
+    isDrawing = true; 
+    ctx.beginPath(); 
+    ctx.moveTo(t.clientX - r.left, t.clientY - r.top); 
+  }, {passive:false});
+  
+  canvas.addEventListener('touchmove', e => { 
+    e.preventDefault(); 
+    if (!isDrawing) return; 
+    const t = e.touches[0]; 
+    const r = canvas.getBoundingClientRect(); 
+    ctx.lineTo(t.clientX - r.left, t.clientY - r.top); 
+    ctx.stroke(); 
+  }, {passive:false});
+  
+  canvas.addEventListener('touchend', () => isDrawing = false);
+}
 
     function setMode(m) {
       mode = m;
@@ -541,39 +545,45 @@
       ctx.lineJoin = 'round';
     }
 
-    function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    // 塗鴉清除：清除後重新塗滿白底
+function clearCanvas() { 
+  const dpr = window.devicePixelRatio || 1;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+}
 
-    async function submitHandwriting() {
-      const base64Image = canvas.toDataURL('image/jpeg', 0.7);
+    // 大屏送出手寫內容
+async function submitHandwriting() {
+  const base64Image = canvas.toDataURL('image/jpeg', 0.8);
 
-      showLoading("Gemini Vision 正在分析手寫內容...");
+  showLoading("Gemini Vision 正在分析手寫內容...");
 
-      try {
-        const res = await callGAS('processHandwritingImage', {
-          base64Image: base64Image,
-          todayStr: todayStr
-        });
+  try {
+    const res = await callGAS('processHandwritingImage', {
+      base64Image: base64Image,
+      todayStr: todayStr
+    });
 
-        hideLoading();
-        localStorage.removeItem('unsentHandwriting');
+    hideLoading();
+    localStorage.removeItem('unsentHandwriting');
 
-        let msg = "辨識與登錄完成！\n";
-        if (res.regularAdded !== undefined) msg += `一般提醒新增：${res.regularAdded} 筆\n`;
-        if (res.missingAdded !== undefined) msg += `缺交名單新增：${res.missingAdded} 筆`;
-        alert(msg);
+    let msg = "辨識與登錄完成！\n";
+    if (res.regularAdded !== undefined) msg += `一般提醒新增：${res.regularAdded} 筆\n`;
+    if (res.missingAdded !== undefined) msg += `缺交名單新增：${res.missingAdded} 筆`;
+    alert(msg);
 
-        clearCanvas();
+    // ★ 已移除 clearCanvas()，手寫畫面將完整保留，方便學生分段登記與繼續書寫
 
-      } catch (err) {
-        hideLoading();
-        try {
-          localStorage.setItem('unsentHandwriting', base64Image);
-          alert("⚠️ 網路連線失敗！手寫畫面已自動備份在本地。\n請等待網路恢復後再次點擊「送出」。");
-        } catch (e) {
-          alert("⚠️ 傳送失敗，且本地儲存空間不足，請確認網路連線！");
-        }
-      }
+  } catch (err) {
+    hideLoading();
+    try {
+      localStorage.setItem('unsentHandwriting', base64Image);
+      alert("⚠️ 網路連線失敗！手寫畫面已自動備份在本地。\n請等待網路恢復後再次點擊「送出」。");
+    } catch (e) {
+      alert("⚠️ 傳送失敗，且本地儲存空間不足，請確認網路連線！");
     }
+  }
+}
 
     /* ================= 教師端語音錄音 ================= */
     function openGeneralAudioModal() { document.getElementById('generalAudioModal').style.display = 'flex'; }
