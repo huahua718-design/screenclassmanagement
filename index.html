@@ -348,12 +348,12 @@
     
     <div class="reminder-split-container">
       <div class="reminder-col">
-        <div class="col-title" id="tomorrowTitle">📅 明日提醒事項</div>
-        <div class="card-list" id="tomorrowReminderList"></div>
+        <div class="col-title" id="thisWeekTitle">📅 本周提醒事項</div>
+        <div class="card-list" id="thisWeekReminderList"></div>
       </div>
       
       <div class="reminder-col">
-        <div class="col-title">🗓️ 下週全週提醒</div>
+        <div class="col-title" id="nextWeekTitle">🗓️ 下週全週提醒</div>
         <div class="card-list" id="nextWeekReminderList"></div>
       </div>
     </div>
@@ -725,63 +725,137 @@ async function submitHandwriting() {
           </div>`;
       });
     }
+// 計算以「週日為第一天」的日期區間輔助函式
+function getWeekDateRanges() {
+  const now = new Date();
+  const day = now.getDay(); // 0 (週日) ~ 6 (週六)
 
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+
+  // 本週六 (本週最後一天)
+  const thisSaturday = new Date(now);
+  thisSaturday.setDate(now.getDate() + (6 - day));
+
+  // 下週日 (下週第一天)
+  const nextSunday = new Date(now);
+  nextSunday.setDate(now.getDate() + (7 - day));
+
+  // 下週六 (下週最後一天)
+  const nextSaturday = new Date(now);
+  nextSaturday.setDate(now.getDate() + (13 - day));
+
+  return {
+    todayStr: formatDate(now),
+    tomorrowStr: formatDate(tomorrow),
+    thisSaturdayStr: formatDate(thisSaturday),
+    nextSundayStr: formatDate(nextSunday),
+    nextSaturdayStr: formatDate(nextSaturday)
+  };
+}
     /* ================= 提醒事項看板 ================= */
-    async function openReminders() {
-      document.getElementById('reminderOverlay').classList.add('active');
-      
-      const tomorrowTitleElem = document.getElementById('tomorrowTitle');
-      if (tomorrowTitleElem) tomorrowTitleElem.innerText = `📅 明日提醒事項 (${tomorrowStr})`;
-      
-      showLoading("載入提醒事項中...");
-      
-      try {
-        const [tomorrowItems, nextWeekItems] = await Promise.all([
-          callGAS('getTomorrowReminders', { tomorrowStr: tomorrowStr }),
-          callGAS('getNextWeekReminders', { todayStr: todayStr })
-        ]);
-        
-        renderReminders(tomorrowItems, nextWeekItems);
-      } catch (err) { 
-        onError(err); 
-      }
-    }
+async function openReminders() {
+  document.getElementById('reminderOverlay').classList.add('active');
+  
+  const dates = getWeekDateRanges();
+  
+  const thisWeekTitleElem = document.getElementById('thisWeekTitle');
+  if (thisWeekTitleElem) {
+    thisWeekTitleElem.innerText = `📅 本周提醒事項 (${dates.tomorrowStr} ~ ${dates.thisSaturdayStr})`;
+  }
+
+  const nextWeekTitleElem = document.getElementById('nextWeekTitle');
+  if (nextWeekTitleElem) {
+    nextWeekTitleElem.innerText = `🗓️ 下週全週提醒 (${dates.nextSundayStr} ~ ${dates.nextSaturdayStr})`;
+  }
+  
+  showLoading("載入提醒事項中...");
+  
+  try {
+    const [thisWeekItems, nextWeekItems] = await Promise.all([
+      callGAS('getThisWeekReminders', { 
+        tomorrowStr: dates.tomorrowStr, 
+        saturdayStr: dates.thisSaturdayStr 
+      }),
+      callGAS('getNextWeekReminders', { 
+        startDateStr: dates.nextSundayStr, 
+        endDateStr: dates.nextSaturdayStr 
+      })
+    ]);
+    
+    renderReminders(thisWeekItems, nextWeekItems, dates.tomorrowStr);
+  } catch (err) { 
+    onError(err); 
+  }
+}
 
     function closeReminders() { document.getElementById('reminderOverlay').classList.remove('active'); }
 
-    function renderReminders(tomorrowItems, nextWeekItems) {
-      hideLoading();
-      
-      const tomorrowList = Array.isArray(tomorrowItems) ? tomorrowItems : [];
-      const nextWeekList = Array.isArray(nextWeekItems) ? nextWeekItems : [];
+    function renderReminders(thisWeekItems, nextWeekItems, tomorrowStr) {
+  hideLoading();
+  
+  const thisWeekList = Array.isArray(thisWeekItems) ? thisWeekItems : [];
+  const nextWeekList = Array.isArray(nextWeekItems) ? nextWeekItems : [];
 
-      const tomorrowContainer = document.getElementById('tomorrowReminderList');
-      tomorrowContainer.innerHTML = tomorrowList.length === 0 
-        ? '<div style="text-align:center; font-size:1.1rem; color:#64748b; margin-top:20px;">🎉 明日尚無提醒事項</div>' 
-        : '';
-      tomorrowList.forEach(it => {
-        tomorrowContainer.innerHTML += `
-          <div class="reminder-card ${it.type}">
-            <div class="card-type type-${it.type}">${it.type}</div>
-            <div class="card-content">${it.range}</div>
-          </div>`;
-      });
+  // 1. 依執行日期由小到大排序 (排序：從明日到週六)
+  thisWeekList.sort((a, b) => String(a.date).localeCompare(String(b.date)));
 
-      const nextWeekContainer = document.getElementById('nextWeekReminderList');
-      nextWeekContainer.innerHTML = nextWeekList.length === 0 
-        ? '<div style="text-align:center; font-size:1.1rem; color:#64748b; margin-top:20px;">🎉 下週尚無提醒事項</div>' 
-        : '';
-      nextWeekList.forEach(it => {
-        nextWeekContainer.innerHTML += `
-          <div class="reminder-card ${it.type}">
-            <div class="card-type type-${it.type}">${it.type}</div>
-            <div class="card-content">
-              <span style="font-size:0.9rem; color:#64748b; display:block;">🗓️ ${it.dateLabel}</span>
-              ${it.range}
-            </div>
+  const thisWeekContainer = document.getElementById('thisWeekReminderList');
+  if (!thisWeekContainer) return;
+
+  if (thisWeekList.length === 0) {
+    thisWeekContainer.innerHTML = '<div style="text-align:center; font-size:1.1rem; color:#64748b; margin-top:20px;">🎉 本周後續尚無提醒事項</div>';
+  } else {
+    thisWeekContainer.innerHTML = '';
+    let hasAddedDivider = false;
+
+    thisWeekList.forEach((it, index) => {
+      // 檢查是否需要插入分隔線（當前項目非明日，且前一項目是明日）
+      const isCurrentTomorrow = (it.date === tomorrowStr);
+      const isPreviousTomorrow = (index > 0 && thisWeekList[index - 1].date === tomorrowStr);
+
+      if (!isCurrentTomorrow && isPreviousTomorrow && !hasAddedDivider) {
+        thisWeekContainer.innerHTML += `
+          <div style="display: flex; align-items: center; margin: 15px 0; color: #3b82f6; font-size: 0.85rem; font-weight: bold;">
+            <div style="flex: 1; border-bottom: 2px dashed #3b82f6;"></div>
+            <span style="padding: 2px 10px; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe; margin: 0 8px;">
+              ▲ 以上為明日 ｜ 以下為本周後續 ▼
+            </span>
+            <div style="flex: 1; border-bottom: 2px dashed #3b82f6;"></div>
           </div>`;
-      });
-    }
+        hasAddedDivider = true;
+      }
+
+      thisWeekContainer.innerHTML += `
+        <div class="reminder-card ${it.type}">
+          <div class="card-type type-${it.type}">${it.type}</div>
+          <div class="card-content">
+            <span style="font-size:0.85rem; color:#64748b; display:block;">🗓️ ${it.dateLabel || it.date}</span>
+            ${it.range}
+          </div>
+        </div>`;
+    });
+  }
+
+  // 2. 渲染下週全週提醒
+  nextWeekList.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const nextWeekContainer = document.getElementById('nextWeekReminderList');
+  if (!nextWeekContainer) return;
+
+  nextWeekContainer.innerHTML = nextWeekList.length === 0 
+    ? '<div style="text-align:center; font-size:1.1rem; color:#64748b; margin-top:20px;">🎉 下週尚無提醒事項</div>' 
+    : '';
+  nextWeekList.forEach(it => {
+    nextWeekContainer.innerHTML += `
+      <div class="reminder-card ${it.type}">
+        <div class="card-type type-${it.type}">${it.type}</div>
+        <div class="card-content">
+          <span style="font-size:0.85rem; color:#64748b; display:block;">🗓️ ${it.dateLabel || it.date}</span>
+          ${it.range}
+        </div>
+      </div>`;
+  });
+}
 
     /* ================= 缺交銷案看板 ================= */
     async function openMissingDashboard() {
