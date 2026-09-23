@@ -261,11 +261,11 @@
         <div id="personalMissingList" class="card-list"></div>
       </div>
       <div style="margin-bottom:20px;">
-        <h3 style="color:#1e293b; margin-bottom:10px;">📌 明日全班提醒事項：</h3>
+        <h3 id="parentThisWeekTitle" style="color:#1e293b; margin-bottom:10px;">📌 本周全班提醒事項：</h3>
         <div id="parentReminderList" class="card-list"></div>
       </div>
       <div>
-        <h3 style="color:#1e293b; margin-bottom:10px;">🗓️ 下週全週提醒：</h3>
+        <h3 id="parentNextWeekTitle" style="color:#1e293b; margin-bottom:10px;">🗓️ 下週全週提醒：</h3>
         <div id="parentNextWeekList" class="card-list"></div>
       </div>
     </div>
@@ -1104,51 +1104,103 @@ async function openReminders() {
       });
     }
 
-    /* ================= 家長端視角 ================= */
-    async function setupParentView() {
-      document.getElementById('headerBtns').style.display = 'none';
-      document.getElementById('pageTitle').innerText = '班級每日聯絡簿';
-      document.getElementById('parentScreen').style.display = 'block';
+   /* ================= 家長端視角 ================= */
+async function setupParentView() {
+  document.getElementById('headerBtns').style.display = 'none';
+  document.getElementById('pageTitle').innerText = '班級每日聯絡簿';
+  document.getElementById('parentScreen').style.display = 'block';
 
-      try {
-        const [tomorrowItems, nextWeekItems] = await Promise.all([
-          callGAS('getTomorrowReminders', { tomorrowStr }),
-          callGAS('getNextWeekReminders', { todayStr })
-        ]);
+  // 直接呼叫您原本寫好的 getWeekDateRanges()
+  const dates = getWeekDateRanges();
 
-        const tomorrowList = document.getElementById('parentReminderList');
-        const tItems = Array.isArray(tomorrowItems) ? tomorrowItems : [];
-        tomorrowList.innerHTML = tItems.length === 0 
-          ? '<div style="color:#64748b; font-size:0.95rem;">🎉 明日尚無提醒事項</div>' 
-          : '';
-        tItems.forEach(it => {
-          tomorrowList.innerHTML += `
-            <div class="reminder-card ${it.type}">
-              <div class="card-type type-${it.type}">${it.type}</div>
-              <div class="card-content">${it.range}</div>
+  // 更新標題顯示日期區間
+  const thisWeekTitle = document.getElementById('parentThisWeekTitle');
+  if (thisWeekTitle) {
+    thisWeekTitle.innerText = `📌 本周全班提醒事項 (${dates.tomorrowStr.slice(5)} ~ ${dates.thisSaturdayStr.slice(5)})：`;
+  }
+
+  const nextWeekTitle = document.getElementById('parentNextWeekTitle');
+  if (nextWeekTitle) {
+    nextWeekTitle.innerText = `🗓️ 下週全週提醒 (${dates.nextSundayStr.slice(5)} ~ ${dates.nextSaturdayStr.slice(5)})：`;
+  }
+
+  try {
+    const [thisWeekItems, nextWeekItems] = await Promise.all([
+      callGAS('getThisWeekReminders', { 
+        tomorrowStr: dates.tomorrowStr, 
+        saturdayStr: dates.thisSaturdayStr 
+      }),
+      callGAS('getNextWeekReminders', { 
+        startDateStr: dates.nextSundayStr, 
+        endDateStr: dates.nextSaturdayStr 
+      })
+    ]);
+
+    // 1. 渲染「本周提醒事項」
+    const thisWeekListContainer = document.getElementById('parentReminderList');
+    const twItems = Array.isArray(thisWeekItems) ? thisWeekItems : [];
+
+    // 依執行日期由小到大排序 (從明日排到週六)
+    twItems.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+
+    if (twItems.length === 0) {
+      thisWeekListContainer.innerHTML = '<div style="color:#64748b; font-size:0.95rem;">🎉 本周後續尚無提醒事項</div>';
+    } else {
+      thisWeekListContainer.innerHTML = '';
+      let hasAddedDivider = false;
+
+      twItems.forEach((it, index) => {
+        // 判斷是否插入「明日」與「明日以後」的分隔線
+        const isCurrentTomorrow = (it.date === dates.tomorrowStr);
+        const isPreviousTomorrow = (index > 0 && twItems[index - 1].date === dates.tomorrowStr);
+
+        if (!isCurrentTomorrow && isPreviousTomorrow && !hasAddedDivider) {
+          thisWeekListContainer.innerHTML += `
+            <div style="display: flex; align-items: center; margin: 12px 0; color: #2563eb; font-size: 0.8rem; font-weight: bold;">
+              <div style="flex: 1; border-bottom: 1px dashed #93c5fd;"></div>
+              <span style="padding: 2px 10px; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe; margin: 0 6px; white-space: nowrap;">
+                ▲ 以上為明日 ｜ 以下為本周後續 ▼
+              </span>
+              <div style="flex: 1; border-bottom: 1px dashed #93c5fd;"></div>
             </div>`;
-        });
+          hasAddedDivider = true;
+        }
 
-        const nextWeekList = document.getElementById('parentNextWeekList');
-        const nwItems = Array.isArray(nextWeekItems) ? nextWeekItems : [];
-        nextWeekList.innerHTML = nwItems.length === 0 
-          ? '<div style="color:#64748b; font-size:0.95rem;">🎉 下週尚無提醒事項</div>' 
-          : '';
-        nwItems.forEach(it => {
-          nextWeekList.innerHTML += `
-            <div class="reminder-card ${it.type}">
-              <div class="card-type type-${it.type}">${it.type}</div>
-              <div class="card-content">
-                <span style="font-size:0.85rem; color:#64748b; display:block;">🗓️ ${it.dateLabel}</span>
-                ${it.range}
-              </div>
-            </div>`;
-        });
-
-      } catch (err) { 
-        onError(err); 
-      }
+        thisWeekListContainer.innerHTML += `
+          <div class="reminder-card ${it.type}">
+            <div class="card-type type-${it.type}">${it.type}</div>
+            <div class="card-content">
+              <span style="font-size:0.85rem; color:#64748b; display:block;">🗓️ ${it.dateLabel || it.date}</span>
+              ${it.range}
+            </div>
+          </div>`;
+      });
     }
+
+    // 2. 渲染「下週全週提醒」
+    const nextWeekListContainer = document.getElementById('parentNextWeekList');
+    const nwItems = Array.isArray(nextWeekItems) ? nextWeekItems : [];
+    nwItems.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+
+    nextWeekListContainer.innerHTML = nwItems.length === 0 
+      ? '<div style="color:#64748b; font-size:0.95rem;">🎉 下週尚無提醒事項</div>' 
+      : '';
+
+    nwItems.forEach(it => {
+      nextWeekListContainer.innerHTML += `
+        <div class="reminder-card ${it.type}">
+          <div class="card-type type-${it.type}">${it.type}</div>
+          <div class="card-content">
+            <span style="font-size:0.85rem; color:#64748b; display:block;">🗓️ ${it.dateLabel || it.date}</span>
+            ${it.range}
+          </div>
+        </div>`;
+    });
+
+  } catch (err) { 
+    onError(err); 
+  }
+}
 
     async function handleParentLogin() {
   const seatNo = document.getElementById('loginSeatNo').value.trim();
