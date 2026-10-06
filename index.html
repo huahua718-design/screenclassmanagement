@@ -1303,36 +1303,46 @@ async function updateDynamicTitles(role) {
   try {
     // 向後端取得 A1 的班級名稱
     const res = await callGAS('getClassTitle');
-    
-    // 👈 【核心修復】：判斷回傳值類型，若為物件則取出內部的字串欄位
-    let className = '智慧教室';
+    console.log("【getClassTitle API 回傳內容】:", res); // 按 F12 可以在 Console 看到實際回傳資料
+
+    let className = '';
+
+    // 1. 若回傳為純字串
     if (typeof res === 'string') {
       className = res;
-    } else if (res && typeof res === 'object') {
-      // 嘗試取出常見的物件屬性名稱
-      className = res.className || res.title || res.data || res.result || '智慧教室';
+    } 
+    // 2. 若回傳為陣列 (例如 GAS 直接回傳 2D 陣列 [["三年一班"]])
+    else if (Array.isArray(res)) {
+      className = res.flat().find(item => item) || '';
+    } 
+    // 3. 若回傳為 JSON 物件，全面比對常見 Key
+    else if (res && typeof res === 'object') {
+      className = res.className || res.title || res.name || res.classTitle || 
+                  res.data || res.result || res.value || 
+                  (typeof res.data === 'string' ? res.data : '') ||
+                  (res.data && (res.data.className || res.data.title)) || '';
     }
-    
+
+    // 清理字串空格
+    className = String(className).trim();
+
+    // 若未成功取得名稱，預設顯示「智慧教室」
+    if (!className) {
+      className = '智慧教室';
+    }
+
     const pageTitleEl = document.getElementById('pageTitle');
-    
-    if (role === 'screen') {
-      // 1. 大屏端
-      const titleText = `${className}的大屏看板`;
-      if (pageTitleEl) pageTitleEl.innerText = titleText;
-      document.title = titleText;
-      
-    } else if (role === 'teacher') {
-      // 2. 教師端
-      const titleText = `${className}教師控制台`;
-      if (pageTitleEl) pageTitleEl.innerText = titleText;
-      document.title = titleText;
-      
+    let titleText = `${className}的大屏看板`;
+
+    if (role === 'teacher') {
+      titleText = `${className}教師控制台`;
     } else if (role === 'parent') {
-      // 3. 家長端
-      const titleText = `${className}線上聯絡簿`;
-      if (pageTitleEl) pageTitleEl.innerText = titleText;
-      document.title = titleText;
+      titleText = `${className}線上聯絡簿`;
     }
+
+    if (pageTitleEl) pageTitleEl.innerText = titleText;
+    document.title = titleText;
+
   } catch (err) {
     console.error("更新班級標題失敗：", err);
   }
