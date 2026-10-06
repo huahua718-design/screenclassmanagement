@@ -415,14 +415,15 @@
   if (currentRole === 'teacher') {
     document.getElementById('teacherScreen').style.display = 'flex';
     document.getElementById('headerBtns').style.display = 'none';
-    document.getElementById('pageTitle').innerText = '📱 教師控制台';
+    updateDynamicTitles('teacher');
   } else if (currentRole === 'parent') {
     setupParentView();
   } else if (currentRole === 'screen') {
     document.getElementById('mainScreen').style.display = 'flex';
     document.getElementById('headerBtns').style.display = 'flex';
-    document.getElementById('pageTitle').innerText = '智慧教室大屏看板';
+    
     initCanvas(); // ★ 關鍵修復：補上原本遺漏的畫布初始化呼叫
+    updateDynamicTitles('screen');
   }
 };
 
@@ -1107,7 +1108,7 @@ async function openReminders() {
    /* ================= 家長端視角 ================= */
 async function setupParentView() {
   document.getElementById('headerBtns').style.display = 'none';
-  document.getElementById('pageTitle').innerText = '班級每日聯絡簿';
+  await updateDynamicTitles('parent');
   document.getElementById('parentScreen').style.display = 'block';
 
   // 直接呼叫您原本寫好的 getWeekDateRanges()
@@ -1297,6 +1298,36 @@ async function setupParentView() {
         try { toolbar.releasePointerCapture(e.pointerId); } catch(err){}
       });
     })();
+    // 動態更新各視角的標題
+async function updateDynamicTitles(role) {
+  try {
+    // 向後端取得 A1 的班級名稱 (例如: "國二愛")
+    const className = await callGAS('getClassTitle') || '智慧教室';
+    
+    const pageTitleEl = document.getElementById('pageTitle');
+    
+    if (role === 'screen') {
+      // 1. 大屏端
+      const titleText = `${className}的大屏看板`;
+      if (pageTitleEl) pageTitleEl.innerText = titleText;
+      document.title = titleText;
+      
+    } else if (role === 'teacher') {
+      // 2. 教師端
+      const titleText = `${className}教師控制台`;
+      if (pageTitleEl) pageTitleEl.innerText = titleText;
+      document.title = titleText;
+      
+    } else if (role === 'parent') {
+      // 3. 家長端
+      const titleText = `${className}線上聯絡簿`;
+      if (pageTitleEl) pageTitleEl.innerText = titleText;
+      document.title = titleText;
+    }
+  } catch (err) {
+    console.error("更新班級標題失敗：", err);
+  }
+}
   </script>
 </body>
 </html>
