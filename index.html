@@ -21,54 +21,6 @@
     .btn-purple { background: #8b5cf6; color: white; }
     .btn-outline { background: transparent; border: 2px solid #64748b; color: #f8fafc; }
 
-        /* 1. 定義預設配色變數（保留您現有的預設樣式） */
-    :root {
-      --bg-color: #0f172a;       /* 現有預設背景 */
-      --card-bg: #1e293b;        /* 現有預設卡片背景 */
-      --text-color: #f8fafc;     /* 現有預設主要文字 */
-      --accent-color: #38bdf8;   /* 現有預設強調色 */
-    }
-    
-    /* 經典護眼綠板風 (Chalkboard) */
-    [data-theme="chalkboard"] {
-      --bg-color: #132E23;
-      --card-bg: #1D4032;
-      --text-color: #F8FAFC;
-      --accent-color: #FDE047;
-    }
-    
-    /* 現代高對比深藍 (Dark Navy) */
-    [data-theme="dark-navy"] {
-      --bg-color: #0F172A;
-      --card-bg: #1E293B;
-      --text-color: #38BDF8;
-      --accent-color: #FB923C;
-    }
-    
-    /* 明亮簡約風 (Nordic Light) */
-    [data-theme="nordic-light"] {
-      --bg-color: #F1F5F9;
-      --card-bg: #FFFFFF;
-      --text-color: #0F172A;
-      --accent-color: #EF4444;
-    }
-    
-    /* 2. 將 CSS 變數套用到主要元件上 */
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      transition: background-color 0.3s, color 0.3s; /* 平滑切換 */
-    }
-    
-    .card, .dashboard-item { /* 您的卡片類別名稱 */
-      background-color: var(--card-bg);
-      transition: background-color 0.3s;
-    }
-    
-    .highlight, .btn-primary { /* 您的強調/按鈕類別名稱 */
-      color: var(--accent-color);
-    }
-
     /* ================= 教師手機端獨立樣式 ================= */
     #teacherScreen {
       flex: 1;
@@ -280,17 +232,6 @@
         <p>預覽明日與下週之班級提醒事項</p>
       </div>
     </div>
-    <!-- 🎨 新增：配色主題切換卡片 (佔用跨 2 欄全寬) -->
-      <div class="mobile-btn-card" style="border-top: 5px solid #8b5cf6; grid-column: span 2;">
-        <h3>🎨 變更大屏主題配色</h3>
-        <p style="margin-bottom: 8px;">點擊下方選單，切換全班大屏顯示風格：</p>
-        <select id="themeSelect" onchange="changeTheme(this.value)" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 1rem; background: #f8fafc; font-weight: bold; color: #1e293b;">
-          <option value="default">預設配色 (預設深藍)</option>
-          <option value="chalkboard">經典護眼綠板風 (Chalkboard)</option>
-          <option value="dark-navy">現代高對比深藍 (Dark Navy)</option>
-          <option value="nordic-light">明亮簡約風 (Nordic Light)</option>
-        </select>
-      </div>
 
     <input type="file" id="teacherCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleTeacherPhoto(event)">
   </div>
@@ -1406,48 +1347,6 @@ async function updateDynamicTitles(role) {
     console.error("更新班級標題失敗：", err);
   }
 }
-    // 1. 執行套用主題至 <body> 標籤
-function applyTheme(themeName) {
-  if (!themeName || themeName === 'default') {
-    document.body.removeAttribute('data-theme');
-  } else {
-    document.body.setAttribute('data-theme', themeName);
-  }
-}
-
-// 2. 教師切換選單時觸發：更新本地並存入 GAS 後端
-async function changeTheme(newTheme) {
-  applyTheme(newTheme); // 本地立即變更
-  try {
-    await callGAS('setTheme', { theme: newTheme });
-    console.log("主題同步至雲端成功：", newTheme);
-  } catch (err) {
-    console.error("同步主題失敗：", err);
-  }
-}
-
-// 3. 網頁載入時（大屏端與教師端），自動向 GAS 取得當前主題
-async function initTheme() {
-  try {
-    const res = await callGAS('getTheme');
-    if (res && res.theme) {
-      applyTheme(res.theme);
-      // 若在教師端，將選單設定為正確的預設值
-      const selectEl = document.getElementById('themeSelect');
-      if (selectEl) selectEl.value = res.theme;
-    }
-  } catch (err) {
-    console.error("讀取主題設定失敗：", err);
-  }
-}
-
-// 網頁初始化時自動呼叫
-document.addEventListener("DOMContentLoaded", function() {
-  initTheme();
-  
-  // 若需要大屏端自動定時同步教師端修改的主題，可開啟下方輪詢（例如每 10 秒檢查一次）：
-   setInterval(initTheme, 10000); 
-});
   </script>
 </body>
 </html>
