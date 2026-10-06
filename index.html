@@ -1301,8 +1301,17 @@ async function setupParentView() {
     // 動態更新各視角的標題
 async function updateDynamicTitles(role) {
   try {
-    // 向後端取得 A1 的班級名稱 (例如: "國二愛")
-    const className = await callGAS('getClassTitle') || '智慧教室';
+    // 向後端取得 A1 的班級名稱
+    const res = await callGAS('getClassTitle');
+    
+    // 👈 【核心修復】：判斷回傳值類型，若為物件則取出內部的字串欄位
+    let className = '智慧教室';
+    if (typeof res === 'string') {
+      className = res;
+    } else if (res && typeof res === 'object') {
+      // 嘗試取出常見的物件屬性名稱
+      className = res.className || res.title || res.data || res.result || '智慧教室';
+    }
     
     const pageTitleEl = document.getElementById('pageTitle');
     
