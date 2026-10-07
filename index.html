@@ -175,7 +175,7 @@
       <button class="btn-purple" onclick="openMissingDashboard()">📋 缺交銷案看板</button>
       <button class="btn-warning" onclick="openReminders()">📅 班級提醒事項</button>
       <!-- 🟢 新增：排座位表按鈕 -->
-      <button class="btn-success" onclick="location.href='?page=seating'">🪑 排座位表</button>
+      <button class="btn-success" onclick="openSeating()">🪑 座位表</button>
     </div>
   </header>
 
@@ -234,8 +234,8 @@
         <p>預覽明日與下週之班級提醒事項</p>
       </div>
       <!-- 🟢 新增：教師端排座位表卡片 -->
-      <div class="mobile-btn-card" style="border-top: 5px solid #10b981;" onclick="location.href='?page=seating'">
-        <h3>🪑 排座位表</h3>
+      <div class="mobile-btn-card" style="border-top: 5px solid #10b981;" onclick="openSeating()">
+        <h3>🪑 座位表</h3>
         <p>開啟座位編排與學生座位查詢</p>
       </div>
     </div>
@@ -1361,6 +1361,10 @@ async function updateDynamicTitles(role) {
   } catch (err) {
     console.error("更新班級標題失敗：", err);
   }
+}
+    // 切換至座位表
+function openSeating() {
+  window.location.href = GAS_SEATING_URL; // 直接在當前頁面載入 GAS 座位表
 }
   </script>
 </body>
