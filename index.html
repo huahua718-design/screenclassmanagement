@@ -1364,7 +1364,10 @@ async function updateDynamicTitles(role) {
 }
     // 切換至座位表
 function openSeating() {
-  window.location.href = GAS_SEATING_URL; // 直接在當前頁面載入 GAS 座位表
+  // 取得目前大屏系統的完整來源網域（例如 https://xxxx.netlify.app 或 https://xxxx.vercel.app）
+  const currentOrigin = window.location.origin;
+  // 將目前的 role 與 origin 當作參數傳給 GAS
+  window.location.href = `${GAS_SEATING_URL}&role=${userRole}&origin=${encodeURIComponent(currentOrigin)}`;
 }
   </script>
 </body>
