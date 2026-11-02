@@ -386,7 +386,7 @@
   </div>
 
   <script>
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw2Ho2FqrlOtpY6-ZdSbbhBRQmFCYoudHDMlunFJ5nMUS378bQ2fP2l2DV1swFLozwM/exec";
+    const GAS_WEB_APP_URL = (new URLSearchParams(window.location.search).get('gas')) || localStorage.getItem('GAS_WEB_APP_URL') || "GAS_WEB_APP_URL";
     const urlParams = new URLSearchParams(window.location.search);
     const userRole = urlParams.get('role') || 'screen';
     const pendingClearTimers = new Map();
@@ -398,6 +398,15 @@
     let isGeneralRecording = false, isMissingRecording = false;
 
     async function callGAS(action, payload = {}) {
+      if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL === "GAS_WEB_APP_URL") {
+        const inputUrl = prompt("⚠️ 尚未設定 Google Apps Script (GAS) 部署網址！\n請貼上您的 GAS 網址 (https://script.google.com/macros/s/.../exec)：");
+        if (inputUrl && inputUrl.trim().startsWith("http")) {
+          localStorage.setItem('GAS_WEB_APP_URL', inputUrl.trim());
+          window.location.reload();
+          return {};
+        }
+        throw new Error("尚未設定 GAS 部署網址，無法連線。");
+      }
       try {
         const response = await fetch(GAS_WEB_APP_URL, {
           method: 'POST',
@@ -1368,6 +1377,10 @@ async function updateDynamicTitles(role) {
     // 切換至座位表
 function openSeating() {
   const currentOrigin = window.location.origin;
+  if (window.location.hostname !== 'script.google.com') {
+    window.location.href = `Seating.html?role=${encodeURIComponent(userRole)}&origin=${encodeURIComponent(currentOrigin)}`;
+    return;
+  }
   window.location.href = `${GAS_WEB_APP_URL}?page=seating&role=${encodeURIComponent(userRole)}&origin=${encodeURIComponent(currentOrigin)}`;
 }
   </script>
