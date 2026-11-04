@@ -162,6 +162,599 @@
     @media (max-width: 768px) {
       .reminder-split-container { flex-direction: column; overflow-y: auto; }
     }
+
+    /* ================= 大屏頂部長按拖曳選單樣式 ================= */
+    .header-action-group {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      position: relative;
+    }
+
+    .interactive-btn-wrapper {
+      position: relative;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+
+    .master-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px 22px !important;
+      font-size: 1.1rem !important;
+      font-weight: 800 !important;
+      border-radius: 14px !important;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+      border: 2px solid rgba(255, 255, 255, 0.2) !important;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .master-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    .master-btn:active, .master-btn.btn-pressed {
+      transform: scale(0.95);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .master-btn .btn-arrow {
+      font-size: 0.85rem;
+      transition: transform 0.2s ease;
+      opacity: 0.8;
+    }
+
+    .master-btn.menu-open .btn-arrow {
+      transform: rotate(180deg);
+    }
+
+    /* 拖曳/點擊選單本體 */
+    .drag-menu {
+      position: absolute;
+      top: calc(100% + 14px);
+      left: 0;
+      min-width: 320px;
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      border-radius: 18px;
+      padding: 12px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      z-index: 550;
+      display: none;
+      opacity: 0;
+      transform: translateY(-10px) scale(0.96);
+      transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+
+    .drag-menu.is-active {
+      display: flex;
+      flex-direction: column;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .drag-menu-header {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #94a3b8;
+      padding: 6px 10px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 8px;
+      text-align: center;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .drag-menu-items {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .drag-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid transparent;
+      color: #f8fafc;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+
+    .drag-menu-item:hover, .drag-menu-item.active-drag-target {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.45), rgba(79, 70, 229, 0.45));
+      border-color: #60a5fa;
+      transform: translateX(6px) scale(1.02);
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.45);
+    }
+
+    .drag-menu-item.active-drag-target .item-title {
+      color: #38bdf8;
+    }
+
+    .drag-menu-item.item-selected {
+      background: #10b981 !important;
+      border-color: #34d399 !important;
+      transform: scale(1.04);
+    }
+
+    .item-icon {
+      font-size: 1.6rem;
+      flex-shrink: 0;
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    .item-text-group {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    .item-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #f8fafc;
+      line-height: 1.25;
+    }
+
+    .item-desc {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      margin-top: 2px;
+      line-height: 1.2;
+    }
+
+    /* ================= 幸運拉霸機 (Slot Machine) ================= */
+    .slot-machine-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 780px;
+      margin: 10px auto;
+      width: 100%;
+    }
+
+    .slot-cabinet {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 6px solid #f59e0b;
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 35px rgba(245, 158, 11, 0.35);
+      position: relative;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .slot-marquee {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      background: #020617;
+      padding: 12px 20px;
+      border-radius: 14px;
+      border: 2px solid #334155;
+    }
+
+    .slot-lights {
+      display: flex;
+      gap: 8px;
+    }
+
+    .slot-light-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ef4444;
+      animation: blinkLights 1.2s infinite alternate;
+    }
+    .slot-light-dot:nth-child(2) { background: #f59e0b; animation-delay: 0.2s; }
+    .slot-light-dot:nth-child(3) { background: #10b981; animation-delay: 0.4s; }
+    .slot-light-dot:nth-child(4) { background: #3b82f6; animation-delay: 0.6s; }
+
+    @keyframes blinkLights {
+      0% { opacity: 0.3; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 10px currentColor; }
+    }
+
+    .slot-main-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      position: relative;
+    }
+
+    .slot-window-outer {
+      flex: 1;
+      background: #000;
+      border: 4px solid #475569;
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slot-window-glass {
+      height: 230px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 40%, rgba(0,0,0,0.4) 100%);
+      border-radius: 12px;
+    }
+
+    .slot-payline {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 2px;
+      background: rgba(239, 68, 68, 0.7);
+      box-shadow: 0 0 8px #ef4444;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .slot-student-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 24px;
+      border-radius: 18px;
+      background: #1e293b;
+      border: 2px solid #3b82f6;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      min-width: 220px;
+      transition: transform 0.08s ease;
+    }
+
+    .slot-avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #f59e0b;
+      background: #334155;
+      margin-bottom: 12px;
+    }
+
+    .slot-avatar-placeholder {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      font-weight: 900;
+      border: 3px solid #f59e0b;
+      margin-bottom: 12px;
+    }
+
+    .slot-seat-badge {
+      background: #ef4444;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 800;
+      padding: 3px 12px;
+      border-radius: 12px;
+      margin-bottom: 6px;
+    }
+
+    .slot-name {
+      color: #ffffff;
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+    }
+
+    .slot-seat-pos {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    /* 實體金屬拉桿 */
+    .slot-lever-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      touch-action: none;
+      padding: 10px;
+      position: relative;
+    }
+
+    .slot-lever-base {
+      width: 32px;
+      height: 48px;
+      background: #334155;
+      border: 2px solid #64748b;
+      border-radius: 6px;
+      margin-top: 80px;
+    }
+
+    .slot-lever-shaft {
+      position: absolute;
+      bottom: 24px;
+      width: 14px;
+      height: 120px;
+      background: linear-gradient(90deg, #94a3b8, #e2e8f0, #64748b);
+      border-radius: 7px;
+      transform-origin: bottom center;
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .slot-lever-ball {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #f87171, #dc2626, #7f1d1d);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.4);
+      position: absolute;
+      top: -22px;
+    }
+
+    .slot-lever-shaft.pulled {
+      transform: rotate(50deg) scaleY(0.75);
+    }
+
+    /* 抽籤按鈕與選項列 */
+    .slot-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 24px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .slot-btn-spin {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      font-size: 1.35rem;
+      font-weight: 900;
+      padding: 15px 36px;
+      border-radius: 18px;
+      border: 3px solid #fef3c7;
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .slot-btn-spin:active {
+      transform: scale(0.96);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+
+    /* 得獎者慶祝彈窗 */
+    .winner-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .winner-overlay.active {
+      display: flex;
+    }
+
+    .winner-card {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 4px solid #f59e0b;
+      border-radius: 28px;
+      padding: 36px;
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 50px rgba(245, 158, 11, 0.5);
+      animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ================= 倒數計時器 (Countdown Timer) ================= */
+    .timer-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      max-width: 700px;
+      margin: 10px auto;
+      width: 100%;
+    }
+
+    .timer-circle-box {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .timer-svg {
+      transform: rotate(-90deg);
+      width: 300px;
+      height: 300px;
+    }
+
+    .timer-svg-bg {
+      fill: none;
+      stroke: #e2e8f0;
+      stroke-width: 14;
+    }
+
+    .timer-svg-progress {
+      fill: none;
+      stroke: #3b82f6;
+      stroke-width: 14;
+      stroke-linecap: round;
+      stroke-dasharray: 816.8;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.5s linear, stroke 0.3s ease;
+    }
+
+    .timer-display-inner {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .timer-time-str {
+      font-family: 'SF Mono', Consolas, Monaco, monospace;
+      font-size: 4.5rem;
+      font-weight: 900;
+      color: #1e293b;
+      letter-spacing: -2px;
+      line-height: 1;
+    }
+
+    .timer-status-hint {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #64748b;
+      margin-top: 8px;
+    }
+
+    .timer-presets {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .preset-chip {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .preset-chip:hover {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+      transform: translateY(-2px);
+    }
+
+    .timer-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .timer-adjust-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    /* ================= 碼表 (Stopwatch) ================= */
+    .stopwatch-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 650px;
+      margin: 10px auto;
+      width: 100%;
+    }
+
+    .stopwatch-display {
+      font-family: 'SF Mono', Consolas, Monaco, monospace;
+      font-size: 4.8rem;
+      font-weight: 900;
+      color: #0f172a;
+      background: #ffffff;
+      padding: 20px 40px;
+      border-radius: 24px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+      border: 2px solid #e2e8f0;
+      margin-bottom: 24px;
+      letter-spacing: -2px;
+    }
+
+    .stopwatch-laps {
+      width: 100%;
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      max-height: 240px;
+      overflow-y: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-top: 20px;
+    }
+
+    .lap-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 1.05rem;
+      font-family: monospace;
+    }
+
   </style>
 </head>
 <body>
@@ -170,16 +763,99 @@
   <header>
     <div class="header-title" id="pageTitle">智慧教室管理系統</div>
     <div class="date-display" id="todayDateStr">載入中...</div>
-    <div class="" id="headerBtns">
-      <button class="btn-primary" onclick="openTodayTasks()">📋 今日任務</button>
-      <button class="btn-purple" onclick="openMissingDashboard()">📋 缺交銷案看板</button>
-      <button class="btn-warning" onclick="openReminders()">📅 班級提醒事項</button>
-      <!-- 🟢 新增：排座位表按鈕 -->
-      <button class="btn-success" onclick="openSeating()">🪑 座位表</button>
-      <!-- 🟢 新增：跨螢投屏/傳檔按鈕 (開啟新分頁) -->
-      <button class="btn-outline" style="color: #ffffff; border-color: #38bdf8; background: #0284c7;" onclick="window.open('https://screen-pusher.vercel.app/screen.html', '_blank')">
-        📲 跨螢投屏
-      </button>
+    <div class="header-action-group" id="headerBtns">
+      <!-- 💼 班級事務主按鍵 (長按拖曳選取 / 點擊開啟) -->
+      <div class="interactive-btn-wrapper" id="classAffairsWrapper">
+        <button id="btnClassAffairs" class="master-btn btn-primary" data-menu="classAffairsMenu">
+          <span style="font-size:1.3rem;">💼</span>
+          <span>班級事務</span>
+          <span class="btn-arrow">▾</span>
+        </button>
+        <!-- 拖曳/點擊展開選單 -->
+        <div class="drag-menu" id="classAffairsMenu">
+          <div class="drag-menu-header">👆 長按並拖曳至功能放開，或直接點選</div>
+          <div class="drag-menu-items">
+            <div class="drag-menu-item" data-action="todayTasks">
+              <span class="item-icon">📋</span>
+              <div class="item-text-group">
+                <span class="item-title">今日任務</span>
+                <span class="item-desc">今日作業、提醒與任務清單</span>
+              </div>
+            </div>
+            <div class="drag-menu-item" data-action="reminders">
+              <span class="item-icon">📅</span>
+              <div class="item-text-group">
+                <span class="item-title">班級提醒事項</span>
+                <span class="item-desc">預覽明日與下週班級行事</span>
+              </div>
+            </div>
+            <div class="drag-menu-item" data-action="missingDashboard">
+              <span class="item-icon">📊</span>
+              <div class="item-text-group">
+                <span class="item-title">缺交銷案看板</span>
+                <span class="item-desc">即時全班未繳名單與點擊銷案</span>
+              </div>
+            </div>
+            <div class="drag-menu-item" data-action="seating">
+              <span class="item-icon">🪑</span>
+              <div class="item-text-group">
+                <span class="item-title">班級座位表</span>
+                <span class="item-desc">動態排座、AI 照片連動與抽籤</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🛠️ 小工具主按鍵 (長按拖曳選取 / 點擊開啟) -->
+      <div class="interactive-btn-wrapper" id="toolsWrapper">
+        <button id="btnTools" class="master-btn btn-warning" data-menu="toolsMenu">
+          <span style="font-size:1.3rem;">🛠️</span>
+          <span>小工具</span>
+          <span class="btn-arrow">▾</span>
+        </button>
+        <!-- 拖曳/點擊展開選單 -->
+        <div class="drag-menu" id="toolsMenu">
+          <div class="drag-menu-header">👆 長按並拖曳至功能放開，或直接點選</div>
+          <div class="drag-menu-items">
+            <div class="drag-menu-item" data-action="lottery">
+              <span class="item-icon">🎰</span>
+              <div class="item-text-group">
+                <span class="item-title">抽籤拉霸機</span>
+                <span class="item-desc">調用座位表學生名單，實體音效</span>
+              </div>
+            </div>
+            <div class="drag-menu-item" data-action="countdown">
+              <span class="item-icon">⏳</span>
+              <div class="item-text-group">
+                <span class="item-title">倒數計時器</span>
+                <span class="item-desc">活動、課堂測驗與分組計時鐘聲</span>
+              </div>
+            </div>
+            <div class="drag-menu-item" data-action="stopwatch">
+              <span class="item-icon">⏱️</span>
+              <div class="item-text-group">
+                <span class="item-title">碼表計時</span>
+                <span class="item-desc">精準分秒競賽與計圈記錄 (Lap)</span>
+              </div>
+            </div>
+            <div class="drag-menu-item" data-action="screenPusher">
+              <span class="item-icon">📲</span>
+              <div class="item-text-group">
+                <span class="item-title">跨螢投屏助手</span>
+                <span class="item-desc">開啟 Screen Pusher 投屏</span>
+              </div>
+            </div>
+            <div class="drag-menu-item" data-action="settings">
+              <span class="item-icon">⚙️</span>
+              <div class="item-text-group">
+                <span class="item-title">系統與同步設定</span>
+                <span class="item-desc">GAS 網址與大屏連結綁定</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -238,6 +914,10 @@
         <p>預覽明日與下週之班級提醒事項</p>
       </div>
       <!-- 🟢 新增：教師端排座位表卡片 -->
+      <div class="mobile-btn-card" style="border-top: 5px solid #6366f1;" onclick="openSystemSettingsModal()">
+        <h3>⚙️ 系統設定與大屏綁定</h3>
+        <p>設定 GAS 網址、推送大屏、複製家長連結</p>
+      </div>
       <div class="mobile-btn-card" style="border-top: 5px solid #10b981;" onclick="openSeating()">
         <h3>🪑 座位表</h3>
         <p>開啟座位編排與學生座位查詢</p>
@@ -385,8 +1065,234 @@
     <div id="loadingText">分析中，請稍候...</div>
   </div>
 
+  <!-- 🎰 課堂抽籤拉霸機 Overlay -->
+  <div id="lotteryOverlay" class="overlay-panel">
+    <div class="overlay-header">
+      <h2 style="font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
+        <span>🎰</span><span>課堂幸運拉霸機</span>
+        <span id="lotteryClassTag" style="font-size: 1rem; background: #f59e0b; color: white; padding: 4px 12px; border-radius: 12px; font-weight: normal;">七年三班</span>
+      </h2>
+      <button class="btn-danger" onclick="closeLotteryTool()">✖ 關閉</button>
+    </div>
+
+    <div class="slot-machine-container">
+      <div class="slot-cabinet">
+        <!-- 機台霓虹頂燈 -->
+        <div class="slot-marquee">
+          <div class="slot-lights">
+            <div class="slot-light-dot"></div>
+            <div class="slot-light-dot"></div>
+            <div class="slot-light-dot"></div>
+            <div class="slot-light-dot"></div>
+          </div>
+          <div style="color: #fef08a; font-weight: 900; font-size: 1.15rem; letter-spacing: 2px;">
+            ✨ LUCKY CLASSROOM SLOT ✨
+          </div>
+          <div class="slot-lights">
+            <div class="slot-light-dot"></div>
+            <div class="slot-light-dot"></div>
+            <div class="slot-light-dot"></div>
+            <div class="slot-light-dot"></div>
+          </div>
+        </div>
+
+        <!-- 滾輪核心視窗與實體拉桿 -->
+        <div class="slot-main-row">
+          <div class="slot-window-outer">
+            <div class="slot-payline"></div>
+            <div class="slot-window-glass" id="slotWindow">
+              <!-- 當前學生卡片 -->
+              <div class="slot-student-card" id="slotStudentCard">
+                <div class="slot-avatar-placeholder" id="slotAvatarPlaceholder">?</div>
+                <img id="slotAvatarImg" class="slot-avatar" style="display:none;" alt="avatar" />
+                <span class="slot-seat-badge" id="slotSeatBadge">等待啟動</span>
+                <span class="slot-name" id="slotName">點擊拉霸開始</span>
+                <span class="slot-seat-pos" id="slotSeatPos">座位連動中</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 側邊實體拉桿 -->
+          <div class="slot-lever-box" onclick="pullLotteryLever()" title="點擊拉動拉桿！">
+            <div class="slot-lever-shaft" id="slotLeverShaft">
+              <div class="slot-lever-ball"></div>
+            </div>
+            <div class="slot-lever-base"></div>
+          </div>
+        </div>
+
+        <!-- 機台下方控制區 -->
+        <div class="slot-controls">
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <label style="color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <input type="checkbox" id="excludeDrawnCheck" checked style="width: 18px; height: 18px; cursor: pointer;">
+              <span>排除已抽中學生</span>
+            </label>
+            <span style="color: #94a3b8; font-size: 0.95rem;">
+              名單: <strong id="lotteryRemainingCount" style="color: #38bdf8;">0</strong> / <span id="lotteryTotalCount">0</span> 人
+            </span>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <button class="btn-outline" style="color: #cbd5e1; border-color: #64748b;" onclick="resetLotteryPool()">
+              🔄 重設抽籤池
+            </button>
+            <button class="slot-btn-spin" id="btnSpinLottery" onclick="pullLotteryLever()">
+              <span>🎲</span><span>啟動拉霸抽籤</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🏆 得獎者彈窗 -->
+  <div id="winnerOverlay" class="winner-overlay">
+    <canvas id="winnerConfettiCanvas" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></canvas>
+    <div class="winner-card">
+      <div style="font-size: 2.2rem; font-weight: 900; color: #f59e0b; margin-bottom: 12px; letter-spacing: 1px;">
+        🎉 恭喜中獎！ 🎉
+      </div>
+      <div style="display: flex; justify-content: center; margin: 15px 0;">
+        <div class="slot-avatar-placeholder" id="winnerAvatarPlaceholder" style="width: 110px; height: 110px; font-size: 2.6rem;">?</div>
+        <img id="winnerAvatarImg" class="slot-avatar" style="width: 110px; height: 110px; display:none;" alt="avatar" />
+      </div>
+      <div id="winnerSeatBadge" style="background:#ef4444; color:white; display:inline-block; font-size:1.2rem; font-weight:bold; padding:4px 16px; border-radius:12px; margin-bottom:8px;">
+        01 號
+      </div>
+      <div id="winnerName" style="color:white; font-size:2.4rem; font-weight:900; margin-bottom:6px;">
+        學生姓名
+      </div>
+      <div id="winnerPos" style="color:#94a3b8; font-size:1.1rem; margin-bottom:24px;">
+        第 1 排 第 1 列
+      </div>
+      <div style="display: flex; justify-content: center; gap: 15px;">
+        <button class="btn-primary" style="padding: 12px 28px; font-size: 1.1rem;" onclick="closeWinnerOverlay(); pullLotteryLever();">
+          🎲 再抽一位
+        </button>
+        <button class="btn-outline" style="padding: 12px 24px; color: white; border-color: #64748b;" onclick="closeWinnerOverlay()">
+          ✖ 完成
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⏳ 倒數計時器 Overlay -->
+  <div id="timerOverlay" class="overlay-panel">
+    <div class="overlay-header">
+      <h2 style="font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
+        <span>⏳</span><span>課堂倒數計時器</span>
+      </h2>
+      <button class="btn-danger" onclick="closeCountdownTool()">✖ 關閉</button>
+    </div>
+
+    <div class="timer-container">
+      <!-- 圓環倒數進度與數字 -->
+      <div class="timer-circle-box">
+        <svg class="timer-svg" viewBox="0 0 300 300">
+          <circle class="timer-svg-bg" cx="150" cy="150" r="130"></circle>
+          <circle id="timerProgressCircle" class="timer-svg-progress" cx="150" cy="150" r="130"></circle>
+        </svg>
+        <div class="timer-display-inner">
+          <div class="timer-time-str" id="timerDisplayStr">05:00</div>
+          <div class="timer-status-hint" id="timerStatusHint">準備就緒</div>
+        </div>
+      </div>
+
+      <!-- 快速時間預設膠囊 -->
+      <div class="timer-presets">
+        <button class="preset-chip" onclick="setTimerPreset(30)">30 秒</button>
+        <button class="preset-chip" onclick="setTimerPreset(60)">1 分鐘</button>
+        <button class="preset-chip" onclick="setTimerPreset(180)">3 分鐘</button>
+        <button class="preset-chip" onclick="setTimerPreset(300)">5 分鐘</button>
+        <button class="preset-chip" onclick="setTimerPreset(600)">10 分鐘</button>
+        <button class="preset-chip" onclick="setTimerPreset(900)">15 分鐘</button>
+      </div>
+
+      <!-- 控制按鈕 -->
+      <div class="timer-actions">
+        <button id="btnTimerStart" class="btn-primary" style="padding: 14px 36px; font-size: 1.3rem; border-radius: 16px;" onclick="toggleTimer()">
+          ▶ 開始
+        </button>
+        <button class="btn-outline" style="padding: 14px 24px; font-size: 1.1rem; color: #334155; border: 2px solid #cbd5e1; border-radius: 16px;" onclick="resetTimer()">
+          🔄 重設
+        </button>
+        <button class="btn-outline" style="padding: 14px 18px; font-size: 1.1rem; color: #f59e0b; border: 2px solid #f59e0b; border-radius: 16px;" onclick="playTimerAlarm()" title="測試鐘聲音效">
+          🔔 試聽鐘聲
+        </button>
+      </div>
+
+      <!-- 微調分秒 -->
+      <div class="timer-adjust-group">
+        <button class="btn-outline" style="padding: 6px 14px; font-size: 0.9rem; color: #64748b; border: 1px solid #cbd5e1;" onclick="adjustTimer(60)">+1 分鐘</button>
+        <button class="btn-outline" style="padding: 6px 14px; font-size: 0.9rem; color: #64748b; border: 1px solid #cbd5e1;" onclick="adjustTimer(-60)">-1 分鐘</button>
+        <button class="btn-outline" style="padding: 6px 14px; font-size: 0.9rem; color: #64748b; border: 1px solid #cbd5e1;" onclick="adjustTimer(10)">+10 秒</button>
+        <button class="btn-outline" style="padding: 6px 14px; font-size: 0.9rem; color: #64748b; border: 1px solid #cbd5e1;" onclick="adjustTimer(-10)">-10 秒</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⏱️ 碼表 (Stopwatch) Overlay -->
+  <div id="stopwatchOverlay" class="overlay-panel">
+    <div class="overlay-header">
+      <h2 style="font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
+        <span>⏱️</span><span>課堂競賽碼表</span>
+      </h2>
+      <button class="btn-danger" onclick="closeStopwatchTool()">✖ 關閉</button>
+    </div>
+
+    <div class="stopwatch-container">
+      <div class="stopwatch-display" id="stopwatchDisplayStr">00:00.00</div>
+
+      <div style="display: flex; gap: 16px; align-items: center;">
+        <button id="btnStopwatchStart" class="btn-primary" style="padding: 14px 36px; font-size: 1.3rem; border-radius: 16px;" onclick="toggleStopwatch()">
+          ▶ 開始
+        </button>
+        <button id="btnStopwatchLap" class="btn-warning" style="padding: 14px 26px; font-size: 1.1rem; border-radius: 16px;" onclick="recordStopwatchLap()" disabled>
+          🚩 計圈 (Lap)
+        </button>
+        <button class="btn-outline" style="padding: 14px 22px; font-size: 1.1rem; color: #334155; border: 2px solid #cbd5e1; border-radius: 16px;" onclick="resetStopwatch()">
+          🔄 重設
+        </button>
+      </div>
+
+      <div class="stopwatch-laps" id="stopwatchLapList">
+        <div style="color: #94a3b8; text-align: center; padding: 20px;">尚未記錄計圈時間</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 系統設定與同步 Modal -->
+  <div id="systemSettingsModal" class="modal-backdrop">
+    <div class="modal-box" style="max-width: 500px;">
+      <h3 style="margin-bottom:15px; text-align:center;">⚙️ 系統 API 與大屏綁定設定</h3>
+      
+      <div style="margin-bottom:15px;">
+        <label style="font-weight:bold; display:block; margin-bottom:5px;">Google Apps Script (GAS) 部署網址：</label>
+        <input type="text" id="settingGasUrlInput" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; font-size:0.9rem;">
+        <button class="btn-primary" style="width:100%; margin-top:8px; padding:8px;" onclick="saveGasUrlSetting()">💾 儲存 GAS 網址</button>
+      </div>
+
+      <hr style="margin:15px 0; border:none; border-top:1px solid #e2e8f0;">
+
+      <h4 style="font-weight:bold; margin-bottom:15px; text-align:center; color:#1e293b;">📲 跨裝置零輸入同步助手</h4>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button class="btn-success" style="padding:12px; font-size:1rem;" onclick="pushToBigScreen()">
+          🚀 1. 推送綁定連結至大屏 (Screen Pusher)
+        </button>
+        
+        <button class="btn-purple" style="padding:12px; font-size:1rem;" onclick="copyParentLink()">
+          📋 2. 複製家長專用連結 (發至 LINE 群組)
+        </button>
+      </div>
+
+      <button class="btn-outline" style="color:#333; margin-top:15px; width:100%; border:1px solid #ccc;" onclick="closeSystemSettingsModal()">關閉</button>
+    </div>
+  </div>
+
   <script>
-    const GAS_WEB_APP_URL = (new URLSearchParams(window.location.search).get('gas')) || localStorage.getItem('GAS_WEB_APP_URL') || "GAS_WEB_APP_URL";
+    let GAS_WEB_APP_URL = "";
     const urlParams = new URLSearchParams(window.location.search);
     const userRole = urlParams.get('role') || 'screen';
     const pendingClearTimers = new Map();
@@ -398,14 +1304,9 @@
     let isGeneralRecording = false, isMissingRecording = false;
 
     async function callGAS(action, payload = {}) {
-      if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL === "GAS_WEB_APP_URL") {
-        const inputUrl = prompt("⚠️ 尚未設定 Google Apps Script (GAS) 部署網址！\n請貼上您的 GAS 網址 (https://script.google.com/macros/s/.../exec)：");
-        if (inputUrl && inputUrl.trim().startsWith("http")) {
-          localStorage.setItem('GAS_WEB_APP_URL', inputUrl.trim());
-          window.location.reload();
-          return {};
-        }
-        throw new Error("尚未設定 GAS 部署網址，無法連線。");
+      if (!GAS_WEB_APP_URL) {
+        openSystemSettingsModal();
+        throw new Error("尚未設定 GAS 部署網址，請先儲存網址。");
       }
       try {
         const response = await fetch(GAS_WEB_APP_URL, {
@@ -419,7 +1320,8 @@
     }
 
     window.onload = function() {
-  pingGAS();
+      initGasUrl(); // 🟢 優先處理 GAS 網址自動匯入與寫入
+      pingGAS();
   initDates();
 
       // 🟢 檢查是否有指定 page 參數（如 ?page=seating）
@@ -451,8 +1353,106 @@
     
     initCanvas(); // ★ 關鍵修復：補上原本遺漏的畫布初始化呼叫
     updateDynamicTitles('screen');
+    initDragMenus(); // 🟢 初始化大屏頂部長按拖曳與點擊選單
+    loadLotteryStudents(); // 🟢 預載座位表學生名單至抽籤池
   }
 };
+
+// 🟢 網址自動讀取、解析、匯入與清理邏輯
+function initGasUrl() {
+  const currentParams = new URLSearchParams(window.location.search);
+  const paramGasUrl = currentParams.get('gasUrl') || currentParams.get('gas');
+
+  // 若網址帶有 gasUrl 參數，自動存入該裝置的 localStorage
+  if (paramGasUrl) {
+    localStorage.setItem('GAS_WEB_APP_URL', decodeURIComponent(paramGasUrl));
+    
+    // 移除網址欄中的 gasUrl / gas 參數，保持網址乾淨
+    currentParams.delete('gasUrl');
+    currentParams.delete('gas');
+    const newSearch = currentParams.toString() ? '?' + currentParams.toString() : window.location.pathname;
+    window.history.replaceState({}, document.title, newSearch);
+  }
+
+  // 讀取當前裝置儲存的 GAS 網址
+  GAS_WEB_APP_URL = localStorage.getItem('GAS_WEB_APP_URL') || "";
+
+  // 若尚未綁定 GAS 網址且非家長端，提醒設定
+  if (!GAS_WEB_APP_URL && userRole !== 'parent') {
+    setTimeout(() => {
+      openSystemSettingsModal();
+    }, 500);
+  }
+}
+
+// 🟢 產生三大端點的帶參數專屬連結
+function generateShareLinks() {
+  const currentOrigin = window.location.origin; // 例如 https://your-app.vercel.app
+  const encodedGas = encodeURIComponent(GAS_WEB_APP_URL);
+
+  return {
+    screenLink: `${currentOrigin}/?role=screen&gasUrl=${encodedGas}`,
+    teacherLink: `${currentOrigin}/?role=teacher&gasUrl=${encodedGas}`,
+    parentLink: `${currentOrigin}/?role=parent&gasUrl=${encodedGas}`
+  };
+}
+
+// 🟢 透過 Screen Pusher 將大屏設定連結推送到大屏
+function pushToBigScreen() {
+  if (!GAS_WEB_APP_URL) {
+    alert("請先輸入並儲存您的 GAS 網址！");
+    return;
+  }
+  const links = generateShareLinks();
+  
+  // 自動將「大屏專用帶參連結」複製到剪貼簿
+  navigator.clipboard.writeText(links.screenLink).then(() => {
+    alert("已複製【大屏專用綁定連結】！\n系統即將為您開啟 Screen Pusher，請將剪貼簿內容貼上並傳送至大屏。");
+    window.open('https://screen-pusher.vercel.app/screen.html', '_blank');
+  }).catch(() => {
+    prompt("請複製以下大屏綁定連結，並貼到 Screen Pusher 傳送至大屏：", links.screenLink);
+    window.open('https://screen-pusher.vercel.app/screen.html', '_blank');
+  });
+}
+
+// 🟢 複製家長端連結
+function copyParentLink() {
+  if (!GAS_WEB_APP_URL) {
+    alert("請先輸入並儲存您的 GAS 網址！");
+    return;
+  }
+  const links = generateShareLinks();
+  navigator.clipboard.writeText(links.parentLink).then(() => {
+    alert("已複製【家長端專用連結】！\n您可以直接貼至 LINE 班級群組供家長使用。");
+  });
+}
+
+// 儲存 GAS 網址
+function saveGasUrlSetting() {
+  const inputUrl = document.getElementById('settingGasUrlInput').value.trim();
+  if (!inputUrl) {
+    alert("請輸入有效的 GAS 網址！");
+    return;
+  }
+  localStorage.setItem('GAS_WEB_APP_URL', inputUrl);
+  GAS_WEB_APP_URL = inputUrl;
+  alert("GAS 網址儲存成功！");
+  closeSystemSettingsModal();
+  location.reload();
+}
+
+function openSystemSettingsModal() {
+  const input = document.getElementById('settingGasUrlInput');
+  if (input) input.value = GAS_WEB_APP_URL;
+  const modal = document.getElementById('systemSettingsModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeSystemSettingsModal() {
+  const modal = document.getElementById('systemSettingsModal');
+  if (modal) modal.style.display = 'none';
+}
+
 
     function initDates() {
       const now = new Date();
@@ -1383,6 +2383,862 @@ function openSeating() {
   }
   window.location.href = `${GAS_WEB_APP_URL}?page=seating&role=${encodeURIComponent(userRole)}&origin=${encodeURIComponent(currentOrigin)}`;
 }
+
+// =========================================================================
+// 🟢 1. 大屏頂部【班級事務】與【小工具】長按拖曳選取控制器
+// =========================================================================
+let currentActiveDragMenu = null;
+let currentHoveredMenuItem = null;
+let isPointerActive = false;
+let pointerDownStartX = 0;
+let pointerDownStartY = 0;
+let pointerDownTimestamp = 0;
+let isDragMoveThresholdPassed = false;
+
+function initDragMenus() {
+  const wrappers = [
+    { wrapperId: 'classAffairsWrapper', btnId: 'btnClassAffairs', menuId: 'classAffairsMenu' },
+    { wrapperId: 'toolsWrapper', btnId: 'btnTools', menuId: 'toolsMenu' }
+  ];
+
+  wrappers.forEach(cfg => {
+    const btn = document.getElementById(cfg.btnId);
+    const menu = document.getElementById(cfg.menuId);
+    if (!btn || !menu) return;
+
+    // A. 按鍵 Pointerdown 事件 (支援滑鼠與大屏觸控)
+    btn.addEventListener('pointerdown', (e) => {
+      // 點擊或長按時喚醒音訊環境
+      getAudioContext();
+
+      isPointerActive = true;
+      pointerDownStartX = e.clientX;
+      pointerDownStartY = e.clientY;
+      pointerDownTimestamp = Date.now();
+      isDragMoveThresholdPassed = false;
+      currentHoveredMenuItem = null;
+
+      // 若該選單未開，立即開啟；若另一個選單開著則關閉另一個
+      if (currentActiveDragMenu && currentActiveDragMenu !== menu) {
+        closeAllDragMenus();
+      }
+
+      openDragMenu(menu, btn);
+      currentActiveDragMenu = menu;
+
+      // 監聽全局移動與放開
+      window.addEventListener('pointermove', onGlobalPointerMove, { passive: false });
+      window.addEventListener('pointerup', onGlobalPointerUp, { once: true });
+    });
+
+    // B. 選單內項目的直接點擊事件 (確保單擊點選也能 100% 觸發)
+    const items = menu.querySelectorAll('.drag-menu-item');
+    items.forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const action = item.dataset.action;
+        highlightAndExecuteAction(item, action);
+      });
+    });
+  });
+
+  // C. 點擊外部關閉選單
+  document.addEventListener('pointerdown', (e) => {
+    if (!e.target.closest('.interactive-btn-wrapper')) {
+      closeAllDragMenus();
+    }
+  });
+}
+
+function openDragMenu(menu, btn) {
+  menu.classList.add('is-active');
+  btn.classList.add('menu-open', 'btn-pressed');
+}
+
+function closeAllDragMenus() {
+  document.querySelectorAll('.drag-menu').forEach(m => m.classList.remove('is-active'));
+  document.querySelectorAll('.master-btn').forEach(b => b.classList.remove('menu-open', 'btn-pressed'));
+  document.querySelectorAll('.drag-menu-item').forEach(i => i.classList.remove('active-drag-target'));
+  currentActiveDragMenu = null;
+  currentHoveredMenuItem = null;
+  window.removeEventListener('pointermove', onGlobalPointerMove);
+}
+
+function onGlobalPointerMove(e) {
+  if (!isPointerActive || !currentActiveDragMenu) return;
+
+  const dx = e.clientX - pointerDownStartX;
+  const dy = e.clientY - pointerDownStartY;
+  if (Math.hypot(dx, dy) > 10) {
+    isDragMoveThresholdPassed = true;
+  }
+
+  // 偵測指針目前位於哪一個選單項目上方
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const targetItem = el ? el.closest('.drag-menu-item') : null;
+
+  if (targetItem && currentActiveDragMenu.contains(targetItem)) {
+    if (targetItem !== currentHoveredMenuItem) {
+      if (currentHoveredMenuItem) {
+        currentHoveredMenuItem.classList.remove('active-drag-target');
+      }
+      currentHoveredMenuItem = targetItem;
+      currentHoveredMenuItem.classList.add('active-drag-target');
+      // 拖曳經過時播放微弱機械回饋音與震動
+      playSlotTick(1.6);
+      if (navigator.vibrate) navigator.vibrate(10);
+    }
+  } else {
+    if (currentHoveredMenuItem) {
+      currentHoveredMenuItem.classList.remove('active-drag-target');
+      currentHoveredMenuItem = null;
+    }
+  }
+}
+
+function onGlobalPointerUp(e) {
+  isPointerActive = false;
+  window.removeEventListener('pointermove', onGlobalPointerMove);
+
+  if (!currentActiveDragMenu) return;
+
+  const pressDuration = Date.now() - pointerDownTimestamp;
+
+  // 1. 若放開時正懸停於某個功能項目上 (長按拖曳命中！)
+  if (currentHoveredMenuItem) {
+    const action = currentHoveredMenuItem.dataset.action;
+    highlightAndExecuteAction(currentHoveredMenuItem, action);
+    return;
+  }
+
+  // 2. 若是純單擊且未拖曳移動，保持選單展開供使用者點選
+  if (!isDragMoveThresholdPassed && pressDuration < 380) {
+    // 保持開啟
+    return;
+  }
+
+  // 3. 拖曳至外部放開，關閉選單
+  closeAllDragMenus();
+}
+
+function highlightAndExecuteAction(itemEl, action) {
+  if (itemEl) {
+    itemEl.classList.add('item-selected');
+  }
+  setTimeout(() => {
+    closeAllDragMenus();
+    executeMenuAction(action);
+  }, 160);
+}
+
+// 🟢 執行對應功能
+function executeMenuAction(action) {
+  console.log("🚀 執行功能選取：", action);
+  switch (action) {
+    case 'todayTasks':
+      openTodayTasks();
+      break;
+    case 'reminders':
+      openReminders();
+      break;
+    case 'missingDashboard':
+      openMissingDashboard();
+      break;
+    case 'seating':
+      openSeating();
+      break;
+    case 'lottery':
+      openLotteryTool();
+      break;
+    case 'countdown':
+      openCountdownTool();
+      break;
+    case 'stopwatch':
+      openStopwatchTool();
+      break;
+    case 'screenPusher':
+      window.open('https://screen-pusher.vercel.app/screen.html', '_blank');
+      break;
+    case 'settings':
+      openSystemSettingsModal();
+      break;
+    default:
+      console.warn("未知的功能項目：", action);
+  }
+}
+
+// =========================================================================
+// 🟢 2. Web Audio API 實體合成音效 (無需外部檔案，零延遲，100% 可用)
+// =========================================================================
+let audioCtxInstance = null;
+
+function getAudioContext() {
+  if (!audioCtxInstance) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      audioCtxInstance = new AudioCtx();
+    }
+  }
+  if (audioCtxInstance && audioCtxInstance.state === 'suspended') {
+    audioCtxInstance.resume();
+  }
+  return audioCtxInstance;
+}
+
+// 拉霸滾輪轉動機械答答聲
+function playSlotTick(pitch = 1.0) {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(280 * pitch, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(70, ctx.currentTime + 0.035);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.035);
+  } catch (err) {}
+}
+
+// 拉霸鎖定定格聲
+function playSlotStop() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(150, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.07);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.07);
+  } catch (err) {}
+}
+
+// 中獎慶祝勝利和弦 (Fanfare)
+function playVictoryFanfare() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const chords = [
+      { f: 523.25, t: 0, d: 0.12 },     // C5
+      { f: 659.25, t: 0.12, d: 0.12 },  // E5
+      { f: 783.99, t: 0.24, d: 0.14 },  // G5
+      { f: 1046.50, t: 0.38, d: 0.7 }   // C6
+    ];
+    chords.forEach(n => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(n.f, now + n.t);
+      gain.gain.setValueAtTime(0.25, now + n.t);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + n.t + n.d);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + n.t);
+      osc.stop(now + n.t + n.d);
+    });
+  } catch (err) {}
+}
+
+// 計時器倒數嗶嗶聲
+function playTimerBeep() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.09);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.09);
+  } catch (err) {}
+}
+
+// 學校下課/時間到鐘聲 Ding-Dong
+function playTimerAlarm() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const bellNotes = [
+      { f: 659.25, t: 0 },    // E5
+      { f: 523.25, t: 0.35 }, // C5
+      { f: 587.33, t: 0.7 },  // D5
+      { f: 392.00, t: 1.05 }  // G4
+    ];
+    bellNotes.forEach(b => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(b.f, now + b.t);
+      gain.gain.setValueAtTime(0.3, now + b.t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + b.t + 0.85);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + b.t);
+      osc.stop(now + b.t + 0.9);
+    });
+  } catch (err) {}
+}
+
+// =========================================================================
+// 🟢 3. 🎰 課堂幸運抽籤拉霸機邏輯 (直接調用座位表學生資訊與照片)
+// =========================================================================
+let lotteryStudentsPool = [];
+let lotteryDrawnSet = new Set();
+let isSlotSpinning = false;
+
+function openLotteryTool() {
+  loadLotteryStudents();
+  document.getElementById('lotteryOverlay').classList.add('active');
+}
+
+function closeLotteryTool() {
+  document.getElementById('lotteryOverlay').classList.remove('active');
+  closeWinnerOverlay();
+}
+
+// 讀取座位表分頁學生資訊
+function loadLotteryStudents() {
+  try {
+    lotteryStudentsPool = [];
+    const className = localStorage.getItem('CLASS_NAME') || '七年三班';
+    const tagEl = document.getElementById('lotteryClassTag');
+    if (tagEl) tagEl.innerText = className;
+
+    // 1. 優先從座位表分頁儲存的狀態 (SEATING_LAYOUT_STATE) 讀取
+    const savedStateStr = localStorage.getItem('SEATING_LAYOUT_STATE');
+    if (savedStateStr) {
+      const stateObj = JSON.parse(savedStateStr);
+      if (stateObj && stateObj.grid && Array.isArray(stateObj.grid)) {
+        for (let r = 0; r < stateObj.grid.length; r++) {
+          for (let c = 0; c < stateObj.grid[r].length; c++) {
+            const cell = stateObj.grid[r][c];
+            if (cell && cell.student && cell.student.name && !cell.isAisle) {
+              lotteryStudentsPool.push({
+                id: String(cell.student.id || '').padStart(2, '0'),
+                name: cell.student.name,
+                photoUrl: cell.student.photoUrl || '',
+                seatPos: `第 ${r + 1} 排 第 ${c + 1} 列`,
+                isDrawn: !!cell.isDrawn
+              });
+              if (cell.isDrawn) {
+                lotteryDrawnSet.add(String(cell.student.id || '').padStart(2, '0'));
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // 2. 次要：若未排座，從 CACHED_STUDENTS 讀取
+    if (lotteryStudentsPool.length === 0) {
+      const cachedStr = localStorage.getItem('CACHED_STUDENTS');
+      if (cachedStr) {
+        const cachedArr = JSON.parse(cachedStr);
+        if (Array.isArray(cachedArr) && cachedArr.length > 0) {
+          lotteryStudentsPool = cachedArr.map(s => ({
+            id: String(s.id || '').padStart(2, '0'),
+            name: s.name,
+            photoUrl: s.photoUrl || '',
+            seatPos: '全班學生名冊',
+            isDrawn: false
+          }));
+        }
+      }
+    }
+
+    // 3. 預設備用範例名單 (確保初次開啟 100% 正常運作不報錯)
+    if (lotteryStudentsPool.length === 0) {
+      const demoNames = [
+        "李燐", "林瑜", "林廷", "林翰", "郇宸", "莊勳", "郭評", "陳澤",
+        "張羽", "黃婕", "楊萱", "蔡涵", "鄭翔", "謝晨", "鍾宇", "簡彤"
+      ];
+      lotteryStudentsPool = demoNames.map((name, idx) => ({
+        id: String(idx + 1).padStart(2, '0'),
+        name: name,
+        photoUrl: '',
+        seatPos: `第 ${Math.floor(idx / 4) + 1} 排 第 ${(idx % 4) + 1} 列`,
+        isDrawn: false
+      }));
+    }
+
+    updateLotteryCounts();
+
+    // 若有學生，預覽第一位
+    if (lotteryStudentsPool.length > 0) {
+      renderSlotCard(lotteryStudentsPool[0]);
+    }
+  } catch (err) {
+    console.error("載入抽籤名單失敗：", err);
+  }
+}
+
+function updateLotteryCounts() {
+  const totalCountEl = document.getElementById('lotteryTotalCount');
+  const remCountEl = document.getElementById('lotteryRemainingCount');
+  const excludeCheck = document.getElementById('excludeDrawnCheck');
+
+  if (totalCountEl) totalCountEl.innerText = lotteryStudentsPool.length;
+  
+  if (remCountEl) {
+    if (excludeCheck && excludeCheck.checked) {
+      const rem = lotteryStudentsPool.filter(s => !lotteryDrawnSet.has(s.id)).length;
+      remCountEl.innerText = rem;
+    } else {
+      remCountEl.innerText = lotteryStudentsPool.length;
+    }
+  }
+}
+
+function renderSlotCard(student) {
+  const badgeEl = document.getElementById('slotSeatBadge');
+  const nameEl = document.getElementById('slotName');
+  const posEl = document.getElementById('slotSeatPos');
+  const imgEl = document.getElementById('slotAvatarImg');
+  const phEl = document.getElementById('slotAvatarPlaceholder');
+
+  if (!badgeEl || !nameEl) return;
+
+  badgeEl.innerText = `${student.id} 號`;
+  nameEl.innerText = student.name;
+  if (posEl) posEl.innerText = student.seatPos || '課堂座位';
+
+  if (student.photoUrl) {
+    imgEl.src = student.photoUrl;
+    imgEl.style.display = 'block';
+    phEl.style.display = 'none';
+  } else {
+    phEl.innerText = student.name ? student.name.charAt(0) : '?';
+    phEl.style.display = 'flex';
+    imgEl.style.display = 'none';
+  }
+}
+
+// 實體拉桿拉動
+function pullLotteryLever() {
+  if (isSlotSpinning) return;
+
+  const lever = document.getElementById('slotLeverShaft');
+  if (lever) {
+    lever.classList.add('pulled');
+    playSlotTick(0.6);
+    setTimeout(() => {
+      lever.classList.remove('pulled');
+    }, 350);
+  }
+
+  startSlotSpinning();
+}
+
+// 啟動拉霸旋轉動畫
+function startSlotSpinning() {
+  if (isSlotSpinning) return;
+  getAudioContext();
+
+  const excludeDrawn = document.getElementById('excludeDrawnCheck')?.checked ?? true;
+  let candidates = lotteryStudentsPool;
+  if (excludeDrawn) {
+    candidates = lotteryStudentsPool.filter(s => !lotteryDrawnSet.has(s.id));
+  }
+
+  if (candidates.length === 0) {
+    alert("⚠️ 所有學生皆已抽中！即將為您重設抽籤池。");
+    resetLotteryPool();
+    return;
+  }
+
+  isSlotSpinning = true;
+  const spinBtn = document.getElementById('btnSpinLottery');
+  if (spinBtn) spinBtn.disabled = true;
+
+  let step = 0;
+  const totalSteps = 28 + Math.floor(Math.random() * 8);
+  let currentSpeed = 45;
+
+  function spinTick() {
+    step++;
+    const randomPick = candidates[Math.floor(Math.random() * candidates.length)];
+    renderSlotCard(randomPick);
+    playSlotTick(1.0 + (step / totalSteps) * 0.4);
+
+    if (step < totalSteps) {
+      if (step > totalSteps - 12) {
+        currentSpeed += 22; // 逐漸減速
+      } else if (step > totalSteps - 6) {
+        currentSpeed += 45;
+      }
+      setTimeout(spinTick, currentSpeed);
+    } else {
+      // 旋轉停止，產生最終得獎者
+      const winner = candidates[Math.floor(Math.random() * candidates.length)];
+      renderSlotCard(winner);
+      playSlotStop();
+
+      // 標記抽中
+      lotteryDrawnSet.add(winner.id);
+      syncDrawnStateToSeating(winner.id);
+      updateLotteryCounts();
+
+      isSlotSpinning = false;
+      if (spinBtn) spinBtn.disabled = false;
+
+      // 延遲 300ms 彈出中獎畫面與勝利號角音效
+      setTimeout(() => {
+        showWinnerOverlay(winner);
+        playVictoryFanfare();
+        startConfetti();
+      }, 350);
+    }
+  }
+
+  spinTick();
+}
+
+// 同步抽中紀錄回 localStorage 中的座位表狀態
+function syncDrawnStateToSeating(studentId) {
+  try {
+    const savedStateStr = localStorage.getItem('SEATING_LAYOUT_STATE');
+    if (!savedStateStr) return;
+    const stateObj = JSON.parse(savedStateStr);
+    if (!stateObj || !stateObj.grid) return;
+
+    for (let r = 0; r < stateObj.grid.length; r++) {
+      for (let c = 0; c < stateObj.grid[r].length; c++) {
+        const cell = stateObj.grid[r][c];
+        if (cell && cell.student && String(cell.student.id).padStart(2, '0') === studentId) {
+          cell.isDrawn = true;
+        }
+      }
+    }
+    localStorage.setItem('SEATING_LAYOUT_STATE', JSON.stringify(stateObj));
+  } catch (err) {}
+}
+
+function resetLotteryPool() {
+  lotteryDrawnSet.clear();
+  try {
+    const savedStateStr = localStorage.getItem('SEATING_LAYOUT_STATE');
+    if (savedStateStr) {
+      const stateObj = JSON.parse(savedStateStr);
+      if (stateObj && stateObj.grid) {
+        stateObj.grid.forEach(row => row.forEach(cell => { if (cell) cell.isDrawn = false; }));
+        localStorage.setItem('SEATING_LAYOUT_STATE', JSON.stringify(stateObj));
+      }
+    }
+  } catch (e) {}
+  updateLotteryCounts();
+  alert("✨ 已重設抽籤池，全員可再次參與抽籤！");
+}
+
+function showWinnerOverlay(winner) {
+  const overlay = document.getElementById('winnerOverlay');
+  const badgeEl = document.getElementById('winnerSeatBadge');
+  const nameEl = document.getElementById('winnerName');
+  const posEl = document.getElementById('winnerPos');
+  const imgEl = document.getElementById('winnerAvatarImg');
+  const phEl = document.getElementById('winnerAvatarPlaceholder');
+
+  if (badgeEl) badgeEl.innerText = `${winner.id} 號`;
+  if (nameEl) nameEl.innerText = winner.name;
+  if (posEl) posEl.innerText = winner.seatPos || '課堂座位';
+
+  if (winner.photoUrl) {
+    imgEl.src = winner.photoUrl;
+    imgEl.style.display = 'block';
+    phEl.style.display = 'none';
+  } else {
+    phEl.innerText = winner.name ? winner.name.charAt(0) : '?';
+    phEl.style.display = 'flex';
+    imgEl.style.display = 'none';
+  }
+
+  overlay.classList.add('active');
+}
+
+function closeWinnerOverlay() {
+  document.getElementById('winnerOverlay').classList.remove('active');
+  stopConfetti();
+}
+
+// 綵帶慶祝粒子特效
+let confettiAnimId = null;
+function startConfetti() {
+  const canvas = document.getElementById('winnerConfettiCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const colors = ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'];
+  for (let i = 0; i < 90; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * -canvas.height,
+      size: Math.random() * 9 + 5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      speedY: Math.random() * 4 + 3,
+      speedX: Math.random() * 2 - 1,
+      rotation: Math.random() * 360
+    });
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rotation * Math.PI) / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      ctx.restore();
+      p.y += p.speedY;
+      p.x += p.speedX;
+      p.rotation += 4;
+      if (p.y > canvas.height) {
+        p.y = -10;
+        p.x = Math.random() * canvas.width;
+      }
+    });
+    confettiAnimId = requestAnimationFrame(render);
+  }
+  render();
+}
+
+function stopConfetti() {
+  if (confettiAnimId) {
+    cancelAnimationFrame(confettiAnimId);
+    confettiAnimId = null;
+  }
+}
+
+// =========================================================================
+// 🟢 4. ⏳ 課堂倒數計時器邏輯
+// =========================================================================
+let timerTotalSeconds = 300;
+let timerRemainingSeconds = 300;
+let timerInterval = null;
+let isTimerRunning = false;
+const TIMER_CIRCUMFERENCE = 2 * Math.PI * 130; // 約 816.8
+
+function openCountdownTool() {
+  document.getElementById('timerOverlay').classList.add('active');
+  updateTimerDisplay();
+}
+
+function closeCountdownTool() {
+  document.getElementById('timerOverlay').classList.remove('active');
+}
+
+function setTimerPreset(seconds) {
+  pauseTimer();
+  timerTotalSeconds = seconds;
+  timerRemainingSeconds = seconds;
+  document.getElementById('timerStatusHint').innerText = "已設定時間";
+  updateTimerDisplay();
+}
+
+function adjustTimer(delta) {
+  pauseTimer();
+  timerRemainingSeconds = Math.max(10, timerRemainingSeconds + delta);
+  if (timerRemainingSeconds > timerTotalSeconds) {
+    timerTotalSeconds = timerRemainingSeconds;
+  }
+  updateTimerDisplay();
+}
+
+function toggleTimer() {
+  getAudioContext();
+  if (isTimerRunning) {
+    pauseTimer();
+  } else {
+    startTimer();
+  }
+}
+
+function startTimer() {
+  if (timerRemainingSeconds <= 0) {
+    timerRemainingSeconds = timerTotalSeconds;
+  }
+  isTimerRunning = true;
+  document.getElementById('btnTimerStart').innerText = "⏸ 暫停";
+  document.getElementById('btnTimerStart').className = "btn-warning";
+  document.getElementById('timerStatusHint').innerText = "計時中...";
+
+  timerInterval = setInterval(() => {
+    timerRemainingSeconds--;
+    updateTimerDisplay();
+
+    // 最後 3 秒播放提醒聲
+    if (timerRemainingSeconds > 0 && timerRemainingSeconds <= 3) {
+      playTimerBeep();
+    }
+
+    // 時間到
+    if (timerRemainingSeconds <= 0) {
+      pauseTimer();
+      document.getElementById('timerStatusHint').innerText = "🔔 時間到！請各組就座";
+      playTimerAlarm();
+    }
+  }, 1000);
+}
+
+function pauseTimer() {
+  isTimerRunning = false;
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  const btn = document.getElementById('btnTimerStart');
+  if (btn) {
+    btn.innerText = "▶ 開始";
+    btn.className = "btn-primary";
+  }
+}
+
+function resetTimer() {
+  pauseTimer();
+  timerRemainingSeconds = timerTotalSeconds;
+  document.getElementById('timerStatusHint').innerText = "準備就緒";
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerRemainingSeconds / 60);
+  const s = timerRemainingSeconds % 60;
+  const timeStr = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+  const displayEl = document.getElementById('timerDisplayStr');
+  if (displayEl) displayEl.innerText = timeStr;
+
+  // 計算圓環進度
+  const circle = document.getElementById('timerProgressCircle');
+  if (circle) {
+    const fraction = timerTotalSeconds > 0 ? (timerRemainingSeconds / timerTotalSeconds) : 0;
+    const offset = TIMER_CIRCUMFERENCE * (1 - fraction);
+    circle.style.strokeDashoffset = offset;
+
+    // 依據剩餘時間改變顏色
+    if (timerRemainingSeconds <= 10) {
+      circle.style.stroke = '#ef4444'; // 紅色
+    } else if (timerRemainingSeconds <= 60) {
+      circle.style.stroke = '#f59e0b'; // 黃色
+    } else {
+      circle.style.stroke = '#3b82f6'; // 藍色
+    }
+  }
+}
+
+// =========================================================================
+// 🟢 5. ⏱️ 碼表 (Stopwatch) 邏輯
+// =========================================================================
+let stopwatchStartTime = 0;
+let stopwatchElapsedTime = 0;
+let stopwatchInterval = null;
+let isStopwatchRunning = false;
+let stopwatchLapCount = 0;
+let lastLapTime = 0;
+
+function openStopwatchTool() {
+  document.getElementById('stopwatchOverlay').classList.add('active');
+}
+
+function closeStopwatchTool() {
+  document.getElementById('stopwatchOverlay').classList.remove('active');
+}
+
+function toggleStopwatch() {
+  getAudioContext();
+  if (isStopwatchRunning) {
+    stopStopwatch();
+  } else {
+    startStopwatch();
+  }
+}
+
+function startStopwatch() {
+  isStopwatchRunning = true;
+  stopwatchStartTime = Date.now() - stopwatchElapsedTime;
+  document.getElementById('btnStopwatchStart').innerText = "⏸ 暫停";
+  document.getElementById('btnStopwatchStart').className = "btn-warning";
+  document.getElementById('btnStopwatchLap').disabled = false;
+
+  stopwatchInterval = setInterval(() => {
+    stopwatchElapsedTime = Date.now() - stopwatchStartTime;
+    renderStopwatchTime(stopwatchElapsedTime);
+  }, 10);
+}
+
+function stopStopwatch() {
+  isStopwatchRunning = false;
+  if (stopwatchInterval) {
+    clearInterval(stopwatchInterval);
+    stopwatchInterval = null;
+  }
+  document.getElementById('btnStopwatchStart').innerText = "▶ 繼續";
+  document.getElementById('btnStopwatchStart').className = "btn-primary";
+}
+
+function resetStopwatch() {
+  stopStopwatch();
+  stopwatchElapsedTime = 0;
+  stopwatchLapCount = 0;
+  lastLapTime = 0;
+  renderStopwatchTime(0);
+  document.getElementById('btnStopwatchStart').innerText = "▶ 開始";
+  document.getElementById('btnStopwatchLap').disabled = true;
+  document.getElementById('stopwatchLapList').innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">尚未記錄計圈時間</div>';
+}
+
+function recordStopwatchLap() {
+  if (!isStopwatchRunning) return;
+  stopwatchLapCount++;
+  const currentTotal = stopwatchElapsedTime;
+  const splitDiff = currentTotal - lastLapTime;
+  lastLapTime = currentTotal;
+
+  const lapList = document.getElementById('stopwatchLapList');
+  if (stopwatchLapCount === 1) {
+    lapList.innerHTML = '';
+  }
+
+  const row = document.createElement('div');
+  row.className = 'lap-row';
+  row.innerHTML = `
+    <span>第 ${stopwatchLapCount} 組 / 圈</span>
+    <span style="color:#64748b;">分段: +${formatTimeFormat(splitDiff)}</span>
+    <strong style="color:#1e293b;">${formatTimeFormat(currentTotal)}</strong>
+  `;
+  lapList.insertBefore(row, lapList.firstChild);
+}
+
+function renderStopwatchTime(ms) {
+  const displayEl = document.getElementById('stopwatchDisplayStr');
+  if (displayEl) displayEl.innerText = formatTimeFormat(ms);
+}
+
+function formatTimeFormat(ms) {
+  const minutes = Math.floor(ms / 60000);
+  const seconds = Math.floor((ms % 60000) / 1000);
+  const hundredths = Math.floor((ms % 1000) / 10);
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(hundredths).padStart(2, '0')}`;
+}
+
   </script>
 </body>
 </html>
