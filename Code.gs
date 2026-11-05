@@ -13,10 +13,14 @@ function doGet(e) {
   // 1. 處理前端 API 請求 (例如 ?action=getClassTitle)
   const action = (e && e.parameter) ? e.parameter.action : null;
   
-  if (action === 'getClassTitle') {
+  if (action === 'getClassTitle' || action === 'getTeacherPin') {
     const className = getClassTitle();
-    return ContentService.createTextOutput(JSON.stringify({ className: className }))
-                         .setMimeType(ContentService.MimeType.JSON);
+    const teacherPin = getTeacherPin();
+    return ContentService.createTextOutput(JSON.stringify({ 
+      success: true,
+      className: className,
+      teacherPin: teacherPin
+    })).setMimeType(ContentService.MimeType.JSON);
   }
   if (action === 'getStudentData') {
     return ContentService.createTextOutput(JSON.stringify(getStudentData()))
@@ -116,19 +120,25 @@ function doPost(e) {
     const action = data.action;
     let result = {};
 
-    if (action === 'getClassTitle') {
-      // 指定取得 "Students" 分頁的 A1 儲存格
+    if (action === 'getClassTitle' || action === 'getTeacherPin') {
+      // 取得 "Students" 分頁的 A1 (班級名稱) 與 C1 (教師管理 PIN 碼)
       var ss = SpreadsheetApp.getActiveSpreadsheet();
       var sheet = ss.getSheetByName("Students");
-      var title = "";
+      var title = "智慧教室";
+      var pin = "8888";
       
       if (sheet) {
-        title = sheet.getRange("A1").getValue();
+        title = sheet.getRange("A1").getValue() || "智慧教室";
+        var valC1 = sheet.getRange("C1").getValue();
+        if (valC1 && String(valC1).trim() !== "") {
+          pin = String(valC1).trim();
+        }
       }
       
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
-        className: String(title || "智慧教室").trim()
+        className: String(title).trim(),
+        teacherPin: String(pin).trim()
       })).setMimeType(ContentService.MimeType.JSON);
       
     } else if (action === 'processAudioInput') {
@@ -1088,6 +1098,19 @@ function getClassTitle() {
   } catch (err) {
     Logger.log("讀取 A1 失敗: " + err.toString());
     return "智慧教室";
+  }
+}
+
+// 🟢 讀取 Students 分頁 C1 儲存格的教師大屏管理 PIN 碼 (預設: 8888)
+function getTeacherPin() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("Students");
+    if (!sheet) return "8888";
+    const val = sheet.getRange("C1").getValue();
+    return (val && String(val).trim() !== "") ? String(val).trim() : "8888";
+  } catch (err) {
+    return "8888";
   }
 }
 // 1. 讀取 Students 分頁名單

@@ -127,17 +127,24 @@
       left: 0; 
       width: 100vw; 
       height: 100vh; 
-      background: #f8fafc; 
+      background: var(--theme-overlay-bg, #f8fafc) !important; 
       z-index: 200; 
       display: none; 
       flex-direction: column; 
       padding: 25px; 
+      transition: background-color 0.25s ease;
+    }
+    .overlay-header {
+      border-bottom: 2px solid var(--theme-card-border, #e2e8f0);
+    }
+    .overlay-header h2 {
+      color: var(--theme-col-title, #1e293b);
     }
     .overlay-panel.active { display: flex; }
     .overlay-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; }
 
     .card-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-    .reminder-card { background: white; border-left: 6px solid #3b82f6; padding: 18px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; }
+    .reminder-card { background: var(--theme-card-bg, white) !important; border: 1.5px solid var(--theme-card-border, #e2e8f0); border-left: 8px solid #3b82f6 !important; padding: 18px; border-radius: 12px; box-shadow: var(--theme-card-shadow, 0 2px 4px rgba(0,0,0,0.05)); display: flex; align-items: center; color: var(--theme-card-text, #1e293b); transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease; }
     .reminder-card.考試 { border-left-color: #ef4444; }
     .reminder-card.作業 { border-left-color: #f59e0b; }
     .reminder-card.提醒事項 { border-left-color: #10b981; }
@@ -156,8 +163,8 @@
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     .reminder-split-container { display: flex; gap: 20px; flex: 1; overflow: hidden; }
-    .reminder-col { flex: 1; display: flex; flex-direction: column; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
-    .col-title { font-size: 1.2rem; font-weight: bold; color: #1e293b; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+    .reminder-col { flex: 1; display: flex; flex-direction: column; background: var(--theme-col-bg, white) !important; border: 1.5px solid var(--theme-card-border, #e2e8f0); padding: 15px; border-radius: 14px; box-shadow: var(--theme-card-shadow, 0 2px 8px rgba(0,0,0,0.05)); overflow: hidden; transition: background-color 0.25s ease, border-color 0.25s ease; }
+    .col-title { font-size: 1.25rem; font-weight: bold; color: var(--theme-col-title, #1e293b) !important; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--theme-col-border, #e2e8f0) !important; }
 
     @media (max-width: 768px) {
       .reminder-split-container { flex-direction: column; overflow-y: auto; }
@@ -1002,6 +1009,17 @@
       height: 100%;
     }
 
+
+    /* 🟢 確保佈景主題 Modal 永遠覆蓋在所有彈窗最上層 (z-index 9999) */
+    #themeModal {
+      z-index: 9999 !important;
+    }
+    #themeModal .modal-box {
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 0 2px rgba(255,255,255,0.2);
+    }
+
   </style>
 </head>
 <body>
@@ -1065,13 +1083,7 @@
         <div class="drag-menu" id="toolsMenu">
           <div class="drag-menu-header">👆 長按並拖曳至功能放開，或直接點選</div>
           <div class="drag-menu-items">
-            <div class="drag-menu-item" data-action="theme">
-              <span class="item-icon">🎨</span>
-              <div class="item-text-group">
-                <span class="item-title">佈景主題切換</span>
-                <span class="item-desc">黑板專注、未來科技、活潑校園、學術清晰</span>
-              </div>
-            </div>
+
             <div class="drag-menu-item" data-action="lottery">
               <span class="item-icon">🎰</span>
               <div class="item-text-group">
@@ -1625,14 +1637,15 @@
         <div id="currentThemeDisplay" style="font-size:0.85rem; color:#64748b; margin-top:4px;">目前主題：標準學術清晰</div>
       </div>
 
-      <!-- 🔒 教師安全管理密碼變更 -->
-      <div style="margin-bottom:15px; background:#f8fafc; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
-        <span style="font-weight:bold; font-size:0.95rem; color:#1e293b; display:block; margin-bottom:4px;">🔒 教師/大屏管理 PIN 碼：</span>
-        <div style="display:flex; gap:8px;">
-          <input type="password" id="customTeacherPinInput" placeholder="目前 PIN 碼 (預設: 8888)" style="flex:1; padding:8px 10px; border-radius:6px; border:1px solid #ccc; font-size:0.9rem;">
-          <button class="btn-primary" style="padding:8px 14px; font-size:0.85rem;" onclick="saveCustomTeacherPin()">變更 PIN</button>
+      <!-- 🔒 教師安全管理密碼說明（由 Google 試算表 C1 控制） -->
+      <div style="margin-bottom:15px; background:var(--theme-card-bg, #f8fafc); padding:12px; border-radius:10px; border:1px solid var(--theme-card-border, #e2e8f0);">
+        <div style="font-weight:bold; font-size:0.95rem; color:var(--theme-card-text, #1e293b); display:flex; align-items:center; gap:6px;">
+          <span>🔒</span><span>大屏與教師管理 PIN 碼</span>
         </div>
-        <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">防止家長手動竄改網址進入大屏控制台</div>
+        <div style="font-size:0.82rem; color:#64748b; margin-top:5px; line-height:1.4;">
+          由 Google 試算表 <strong>Students</strong> 分頁 <strong>C1</strong> 格直接遠端控制。<br>
+          <span style="color:#10b981; font-weight:bold;">✔ 已由雲端試算表保護，大屏端無法竄改，徹底防範學生隨意動用。</span>
+        </div>
       </div>
 
       <hr style="margin:15px 0; border:none; border-top:1px solid #e2e8f0;">
@@ -3725,10 +3738,21 @@ function checkTeacherAuth(callback) {
   }
 }
 
-function verifyTeacherPin() {
+async function verifyTeacherPin() {
   const input = document.getElementById('teacherAuthPinInput');
   const enteredPin = (input ? input.value : '').trim();
-  const currentPin = localStorage.getItem('TEACHER_MANAGEMENT_PIN') || '8888';
+  let currentPin = localStorage.getItem('TEACHER_MANAGEMENT_PIN') || '8888';
+
+  // 優先連線 GAS 讀取試算表 Students C1 最新 PIN 碼
+  if (GAS_WEB_APP_URL) {
+    try {
+      const res = await callGAS('getTeacherPin');
+      if (res && res.teacherPin) {
+        currentPin = String(res.teacherPin).trim();
+        localStorage.setItem('TEACHER_MANAGEMENT_PIN', currentPin);
+      }
+    } catch(e) {}
+  }
 
   if (enteredPin === currentPin) {
     localStorage.setItem('DEVICE_AUTH_TEACHER', 'authorized');
