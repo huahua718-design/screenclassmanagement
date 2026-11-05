@@ -6,9 +6,9 @@
   <title>智慧教室管理系統</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; }
-    body { background-color: #f4f6f9; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+    body { background-color: var(--theme-bg, #f4f6f9); overflow: hidden; height: 100vh; display: flex; flex-direction: column; transition: background-color 0.25s ease; }
     
-    header { background: #1e293b; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    header { background: var(--theme-header-bg, #1e293b); color: var(--theme-header-text, white); border-bottom: var(--theme-header-border, transparent); box-shadow: var(--theme-header-shadow, 0 2px 8px rgba(0,0,0,0.1)); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; transition: all 0.25s ease; }
     .header-title { font-size: 1.5rem; font-weight: bold; }
     .date-display { font-size: 1.1rem; color: #94a3b8; }
     .btn-group { display: flex; gap: 10px; }
@@ -78,7 +78,7 @@
     }
 
     main { flex: 1; position: relative; display: flex; flex-direction: column; padding: 15px; }
-    .canvas-container { flex: 1; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
+    .canvas-container { flex: 1; background: var(--theme-canvas-container-bg, white); border: var(--theme-canvas-border, 1px solid #e2e8f0); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; overflow: hidden; transition: all 0.25s ease; }
     canvas { width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
 
     /* 左側懸浮工具列 */
@@ -755,6 +755,253 @@
       font-family: monospace;
     }
 
+
+    /* ==================== 佈景主題 (Theming) CSS Variables ==================== */
+    :root {
+      --theme-bg: #f4f6f9;
+      --theme-header-bg: #1e293b;
+      --theme-header-text: #ffffff;
+      --theme-header-border: transparent;
+      --theme-header-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      --theme-card-bg: #ffffff;
+      --theme-card-text: #1e293b;
+      --theme-card-border: #e2e8f0;
+      --theme-card-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      --theme-canvas-container-bg: #ffffff;
+      --theme-canvas-border: 1px solid #e2e8f0;
+      --theme-toolbar-bg: rgba(255, 255, 255, 0.95);
+      --theme-toolbar-border: 1px solid rgba(0, 0, 0, 0.1);
+      --theme-overlay-bg: #f8fafc;
+      --theme-overlay-header-border: #e2e8f0;
+      --theme-col-bg: #ffffff;
+      --theme-col-title: #1e293b;
+      --theme-col-border: #e2e8f0;
+      --theme-canvas-bg: #ffffff;
+      --theme-pen-color: #0f172a;
+    }
+
+    /* 1. 標準商務 / 高效清晰主題 (Academic Clarity Theme - 預設) */
+    body[data-theme="academic"] {
+      --theme-bg: #f4f6f9;
+      --theme-header-bg: #1e293b;
+      --theme-header-text: #ffffff;
+      --theme-header-border: transparent;
+      --theme-header-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      --theme-card-bg: #ffffff;
+      --theme-card-text: #1e293b;
+      --theme-card-border: #e2e8f0;
+      --theme-card-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      --theme-canvas-container-bg: #ffffff;
+      --theme-canvas-border: 2px solid #e2e8f0;
+      --theme-toolbar-bg: rgba(255, 255, 255, 0.96);
+      --theme-toolbar-border: 1px solid #cbd5e1;
+      --theme-overlay-bg: #f8fafc;
+      --theme-overlay-header-border: #e2e8f0;
+      --theme-col-bg: #ffffff;
+      --theme-col-title: #1e293b;
+      --theme-col-border: #e2e8f0;
+      --theme-canvas-bg: #ffffff;
+      --theme-pen-color: #0f172a;
+    }
+
+    /* 2. 深色專注 / 模擬黑板主題 (Chalkboard Focus Theme) */
+    body[data-theme="chalkboard"] {
+      --theme-bg: #0b2419;
+      --theme-header-bg: #143d2c;
+      --theme-header-text: #fef08a;
+      --theme-header-border: 2px solid #2d7a58;
+      --theme-header-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      --theme-card-bg: #174230;
+      --theme-card-text: #f8fafc;
+      --theme-card-border: #2d7a58;
+      --theme-card-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      --theme-canvas-container-bg: #133e2d;
+      --theme-canvas-border: 4px solid #854d0e; /* 木質黑板框 */
+      --theme-toolbar-bg: rgba(20, 61, 44, 0.95);
+      --theme-toolbar-border: 1px solid #2d7a58;
+      --theme-overlay-bg: #0b2419;
+      --theme-overlay-header-border: #2d7a58;
+      --theme-col-bg: #174230;
+      --theme-col-title: #fef08a;
+      --theme-col-border: #2d7a58;
+      --theme-canvas-bg: #133e2d;
+      --theme-pen-color: #fef08a;
+    }
+    body[data-theme="chalkboard"] .reminder-card {
+      background: #174230 !important;
+      border: 1.5px solid #2d7a58 !important;
+      border-left-width: 8px !important;
+      color: #f8fafc !important;
+    }
+    body[data-theme="chalkboard"] .card-content {
+      color: #fef08a !important; /* 粉筆黃高對比文字 */
+    }
+    body[data-theme="chalkboard"] .col-title {
+      color: #fef08a !important;
+      border-bottom-color: #2d7a58 !important;
+    }
+    body[data-theme="chalkboard"] .overlay-header h2 {
+      color: #fef08a !important;
+    }
+    body[data-theme="chalkboard"] .canvas-toolbar-left button {
+      background: #174230 !important;
+      color: #fef08a !important;
+      border-color: #2d7a58 !important;
+    }
+
+    /* 3. 活潑多彩 / 國小幼兒校園主題 (Playful Campus Theme) */
+    body[data-theme="playful"] {
+      --theme-bg: #fffbeb;
+      --theme-header-bg: #ea580c;
+      --theme-header-text: #ffffff;
+      --theme-header-border: transparent;
+      --theme-header-shadow: 0 4px 16px rgba(234, 88, 12, 0.2);
+      --theme-card-bg: #ffffff;
+      --theme-card-text: #1e293b;
+      --theme-card-border: #fed7aa;
+      --theme-card-shadow: 0 6px 18px rgba(234, 88, 12, 0.08);
+      --theme-canvas-container-bg: #ffffff;
+      --theme-canvas-border: 3px solid #fed7aa;
+      --theme-toolbar-bg: rgba(255, 255, 255, 0.98);
+      --theme-toolbar-border: 2px solid #fed7aa;
+      --theme-overlay-bg: #fffbeb;
+      --theme-overlay-header-border: #fed7aa;
+      --theme-col-bg: #ffffff;
+      --theme-col-title: #ea580c;
+      --theme-col-border: #fed7aa;
+      --theme-canvas-bg: #ffffff;
+      --theme-pen-color: #1e3a8a;
+    }
+    body[data-theme="playful"] .reminder-card {
+      border-radius: 18px !important;
+      border: 2px solid #fed7aa !important;
+      border-left-width: 8px !important;
+    }
+    body[data-theme="playful"] .col-title {
+      color: #ea580c !important;
+      border-bottom-color: #fed7aa !important;
+    }
+    body[data-theme="playful"] .card-type {
+      border-radius: 12px !important;
+    }
+
+    /* 4. 未來科技 / 模擬數據大屏主題 (Future Tech Theme) */
+    body[data-theme="tech"] {
+      --theme-bg: #030712;
+      --theme-header-bg: #090e1f;
+      --theme-header-text: #38bdf8;
+      --theme-header-border: 2px solid #0284c7;
+      --theme-header-shadow: 0 4px 20px rgba(0, 240, 255, 0.25);
+      --theme-card-bg: rgba(11, 20, 42, 0.92);
+      --theme-card-text: #f0f9ff;
+      --theme-card-border: #0284c7;
+      --theme-card-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+      --theme-canvas-container-bg: #030712;
+      --theme-canvas-border: 3px solid #00f0ff;
+      --theme-toolbar-bg: rgba(9, 14, 31, 0.95);
+      --theme-toolbar-border: 1px solid #00f0ff;
+      --theme-overlay-bg: #030712;
+      --theme-overlay-header-border: #0284c7;
+      --theme-col-bg: rgba(11, 20, 42, 0.92);
+      --theme-col-title: #00f0ff;
+      --theme-col-border: #0284c7;
+      --theme-canvas-bg: #030712;
+      --theme-pen-color: #00f0ff;
+    }
+    body[data-theme="tech"] .header-title {
+      color: #00f0ff !important;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.6) !important;
+    }
+    body[data-theme="tech"] .reminder-card {
+      background: rgba(11, 20, 42, 0.95) !important;
+      color: #f0f9ff !important;
+      border: 1.5px solid #0284c7 !important;
+      border-left-width: 8px !important;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.2) !important;
+    }
+    body[data-theme="tech"] .card-content {
+      color: #38bdf8 !important;
+    }
+    body[data-theme="tech"] .col-title {
+      color: #00f0ff !important;
+      border-bottom-color: #0284c7 !important;
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.4) !important;
+    }
+    body[data-theme="tech"] .overlay-header h2 {
+      color: #00f0ff !important;
+    }
+    body[data-theme="tech"] .canvas-toolbar-left button {
+      background: #090e1f !important;
+      color: #00f0ff !important;
+      border-color: #0284c7 !important;
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.3) !important;
+    }
+
+    /* 主題切換卡片專用樣式 */
+    .theme-picker-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 15px 0;
+    }
+    .theme-card {
+      border: 2px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+    }
+    .theme-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    }
+    .theme-card.active {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px #93c5fd, 0 6px 16px rgba(59, 130, 246, 0.2);
+    }
+    .theme-card-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #10b981;
+      color: white;
+      font-size: 0.72rem;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 10px;
+      display: none;
+    }
+    .theme-card.active .theme-card-badge {
+      display: block;
+    }
+    .theme-card-title {
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: #1e293b;
+    }
+    .theme-card-desc {
+      font-size: 0.75rem;
+      color: #64748b;
+      line-height: 1.3;
+    }
+    .theme-swatch {
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.1);
+      margin-top: 4px;
+    }
+    .theme-swatch span {
+      flex: 1;
+      height: 100%;
+    }
+
   </style>
 </head>
 <body>
@@ -818,6 +1065,13 @@
         <div class="drag-menu" id="toolsMenu">
           <div class="drag-menu-header">👆 長按並拖曳至功能放開，或直接點選</div>
           <div class="drag-menu-items">
+            <div class="drag-menu-item" data-action="theme">
+              <span class="item-icon">🎨</span>
+              <div class="item-text-group">
+                <span class="item-title">佈景主題切換</span>
+                <span class="item-desc">黑板專注、未來科技、活潑校園、學術清晰</span>
+              </div>
+            </div>
             <div class="drag-menu-item" data-action="lottery">
               <span class="item-icon">🎰</span>
               <div class="item-text-group">
@@ -1262,7 +1516,94 @@
     </div>
   </div>
 
-  <!-- 系統設定與同步 Modal -->
+  <!-- 🎨 大屏佈景主題選擇 Modal -->
+  <div id="themeModal" class="modal-backdrop">
+    <div class="modal-box" style="max-width: 540px;">
+      <h3 style="margin-bottom:6px; text-align:center; font-size:1.4rem;">🎨 大屏佈景主題風格</h3>
+      <p style="text-align:center; color:#64748b; font-size:0.85rem; margin-bottom:15px;">
+        支援四種高對比度且適合 Gemini 視覺辨識的情境主題，點擊即時生效：
+      </p>
+
+      <div class="theme-picker-grid" id="themePickerGrid">
+        <!-- 1. 標準商務 -->
+        <div class="theme-card" data-theme-id="academic" onclick="selectTheme('academic')">
+          <span class="theme-card-badge">✔ 正在使用</span>
+          <div class="theme-card-title">📘 標準學術清晰 (預設)</div>
+          <div class="theme-card-desc">冷色深藍頂欄、白底高對比卡片，資訊層級分明，適合常規課堂與行政展示。</div>
+          <div class="theme-swatch">
+            <span style="background:#1e293b;"></span>
+            <span style="background:#3b82f6;"></span>
+            <span style="background:#ffffff;"></span>
+            <span style="background:#f4f6f9;"></span>
+          </div>
+        </div>
+
+        <!-- 2. 模擬黑板 -->
+        <div class="theme-card" data-theme-id="chalkboard" onclick="selectTheme('chalkboard')">
+          <span class="theme-card-badge">✔ 正在使用</span>
+          <div class="theme-card-title">📗 深色專注 / 模擬黑板</div>
+          <div class="theme-card-desc">沉浸深綠黑板色、粉筆亮黃高對比文字與黑板畫布，大幅降低刺眼反光與視覺疲勞。</div>
+          <div class="theme-swatch">
+            <span style="background:#143d2c;"></span>
+            <span style="background:#133e2d;"></span>
+            <span style="background:#fef08a;"></span>
+            <span style="background:#854d0e;"></span>
+          </div>
+        </div>
+
+        <!-- 3. 活潑校園 -->
+        <div class="theme-card" data-theme-id="playful" onclick="selectTheme('playful')">
+          <span class="theme-card-badge">✔ 正在使用</span>
+          <div class="theme-card-title">📙 活潑多彩 / 國小幼兒</div>
+          <div class="theme-card-desc">暖淡黃底色、大圓角糖果邊框與暖色導覽列，營造親切有趣的數位學習遊樂園。</div>
+          <div class="theme-swatch">
+            <span style="background:#ea580c;"></span>
+            <span style="background:#fef08a;"></span>
+            <span style="background:#fed7aa;"></span>
+            <span style="background:#fffbeb;"></span>
+          </div>
+        </div>
+
+        <!-- 4. 未來科技 -->
+        <div class="theme-card" data-theme-id="tech" onclick="selectTheme('tech')">
+          <span class="theme-card-badge">✔ 正在使用</span>
+          <div class="theme-card-title">🌌 未來科技 / 模擬數據</div>
+          <div class="theme-card-desc">賽博暗黑、電子藍與霓虹發光線條，螢光筆跡高亮，適合科幻探索、STEM 與專案競賽。</div>
+          <div class="theme-swatch">
+            <span style="background:#090e1f;"></span>
+            <span style="background:#030712;"></span>
+            <span style="background:#00f0ff;"></span>
+            <span style="background:#38bdf8;"></span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" style="width:100%; padding:10px; font-size:1rem;" onclick="closeThemeModal()">確定並返回</button>
+    </div>
+  </div>
+
+  <!-- 🔒 教師 / 大屏安全管理鎖定 Modal -->
+  <div id="teacherAuthModal" class="modal-backdrop">
+    <div class="modal-box" style="max-width: 440px; text-align: center;">
+      <div style="font-size: 2.5rem; margin-bottom: 8px;">🔒</div>
+      <h3 style="margin-bottom: 8px; font-size: 1.35rem; color: #1e293b;">教室大屏與教師權限驗證</h3>
+      <p style="color: #64748b; font-size: 0.88rem; margin-bottom: 18px; line-height: 1.4;">
+        為防範家長或訪客誤入教師控制台或修改班級數據，此裝置首次連線需驗證管理密碼（預設密碼：<strong>8888</strong>，可在設定中變更）：
+      </p>
+
+      <div style="margin-bottom: 15px; text-align: left;">
+        <label style="font-weight: bold; font-size: 0.9rem; color: #334155;">請輸入管理 PIN 碼：</label>
+        <input type="password" id="teacherAuthPinInput" placeholder="請輸入管理密碼 (預設: 8888)" style="width:100%; padding:12px; font-size:1.1rem; border-radius:8px; border:1.5px solid #cbd5e1; margin-top:5px; text-align:center; letter-spacing:4px;">
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-primary" style="flex:1; padding:12px; font-size:1rem;" onclick="verifyTeacherPin()">🔓 驗證並解鎖</button>
+        <button class="btn-outline" style="padding:12px; color:#475569; border:1px solid #cbd5e1;" onclick="cancelTeacherAuth()">返回家長頁</button>
+      </div>
+    </div>
+  </div>
+
+    <!-- 系統設定與同步 Modal -->
   <div id="systemSettingsModal" class="modal-backdrop">
     <div class="modal-box" style="max-width: 500px;">
       <h3 style="margin-bottom:15px; text-align:center;">⚙️ 系統 API 與大屏綁定設定</h3>
@@ -1271,6 +1612,27 @@
         <label style="font-weight:bold; display:block; margin-bottom:5px;">Google Apps Script (GAS) 部署網址：</label>
         <input type="text" id="settingGasUrlInput" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; font-size:0.9rem;">
         <button class="btn-primary" style="width:100%; margin-top:8px; padding:8px;" onclick="saveGasUrlSetting()">💾 儲存 GAS 網址</button>
+      </div>
+
+      <hr style="margin:15px 0; border:none; border-top:1px solid #e2e8f0;">
+
+      <!-- 🎨 快速佈景主題切換按鍵 -->
+      <div style="margin-bottom:15px; background:#f8fafc; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-weight:bold; font-size:0.95rem; color:#1e293b;">🎨 大屏佈景主題：</span>
+          <button class="btn-outline" style="padding:6px 12px; font-size:0.85rem; color:#3b82f6; border-color:#3b82f6;" onclick="openThemeModal()">更換主題</button>
+        </div>
+        <div id="currentThemeDisplay" style="font-size:0.85rem; color:#64748b; margin-top:4px;">目前主題：標準學術清晰</div>
+      </div>
+
+      <!-- 🔒 教師安全管理密碼變更 -->
+      <div style="margin-bottom:15px; background:#f8fafc; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
+        <span style="font-weight:bold; font-size:0.95rem; color:#1e293b; display:block; margin-bottom:4px;">🔒 教師/大屏管理 PIN 碼：</span>
+        <div style="display:flex; gap:8px;">
+          <input type="password" id="customTeacherPinInput" placeholder="目前 PIN 碼 (預設: 8888)" style="flex:1; padding:8px 10px; border-radius:6px; border:1px solid #ccc; font-size:0.9rem;">
+          <button class="btn-primary" style="padding:8px 14px; font-size:0.85rem;" onclick="saveCustomTeacherPin()">變更 PIN</button>
+        </div>
+        <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">防止家長手動竄改網址進入大屏控制台</div>
       </div>
 
       <hr style="margin:15px 0; border:none; border-top:1px solid #e2e8f0;">
@@ -1557,7 +1919,8 @@ function initCanvas() {
     isDrawing = true;
 
     // 每次落筆前，強制根據當前模式重設畫筆顏色與粗細
-    ctx.strokeStyle = (mode === 'pen') ? '#000000' : '#ffffff';
+    const cfg = THEME_CONFIGS[currentThemeId] || THEME_CONFIGS.academic;
+    ctx.strokeStyle = (mode === 'pen') ? cfg.penColor : cfg.eraserColor;
     ctx.lineWidth = (mode === 'pen') ? 4 : 30;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -3237,6 +3600,170 @@ function formatTimeFormat(ms) {
   const seconds = Math.floor((ms % 60000) / 1000);
   const hundredths = Math.floor((ms % 1000) / 10);
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(hundredths).padStart(2, '0')}`;
+}
+
+
+// =========================================================================
+// 🟢 6. 🎨 佈景主題管理引擎 (Theming Engine)
+// =========================================================================
+const THEME_CONFIGS = {
+  academic: {
+    id: 'academic',
+    name: '標準學術清晰',
+    canvasBg: '#ffffff',
+    penColor: '#0f172a',
+    eraserColor: '#ffffff'
+  },
+  chalkboard: {
+    id: 'chalkboard',
+    name: '深色專注 / 模擬黑板',
+    canvasBg: '#133e2d',
+    penColor: '#fef08a',
+    eraserColor: '#133e2d'
+  },
+  playful: {
+    id: 'playful',
+    name: '活潑多彩 / 國小校園',
+    canvasBg: '#ffffff',
+    penColor: '#1e3a8a',
+    eraserColor: '#ffffff'
+  },
+  tech: {
+    id: 'tech',
+    name: '未來科技 / 模擬數據',
+    canvasBg: '#030712',
+    penColor: '#00f0ff',
+    eraserColor: '#030712'
+  }
+};
+
+let currentThemeId = 'academic';
+
+function initTheme() {
+  const savedTheme = localStorage.getItem('APP_THEME') || 'academic';
+  selectTheme(savedTheme, false);
+}
+
+function selectTheme(themeId, triggerCanvasRefresh = true) {
+  if (!THEME_CONFIGS[themeId]) themeId = 'academic';
+  currentThemeId = themeId;
+  document.body.dataset.theme = themeId;
+  localStorage.setItem('APP_THEME', themeId);
+
+  // 更新 Modal 卡片選取狀態
+  document.querySelectorAll('.theme-card').forEach(card => {
+    if (card.dataset.themeId === themeId) {
+      card.classList.add('active');
+    } else {
+      card.classList.remove('active');
+    }
+  });
+
+  // 更新設定視窗內的文字
+  const displayEl = document.getElementById('currentThemeDisplay');
+  if (displayEl) {
+    displayEl.innerText = `目前主題：${THEME_CONFIGS[themeId].name}`;
+  }
+
+  // 自動同步黑板畫布背景色與筆刷色
+  if (triggerCanvasRefresh && typeof applyThemeToCanvas === 'function') {
+    applyThemeToCanvas();
+  }
+}
+
+function openThemeModal() {
+  const modal = document.getElementById('themeModal');
+  if (modal) modal.style.display = 'flex';
+  selectTheme(currentThemeId, false);
+}
+
+function closeThemeModal() {
+  const modal = document.getElementById('themeModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function applyThemeToCanvas() {
+  if (!canvas || !ctx) return;
+  const cfg = THEME_CONFIGS[currentThemeId] || THEME_CONFIGS.academic;
+  const dpr = window.devicePixelRatio || 1;
+
+  // 重置背景色
+  ctx.fillStyle = cfg.canvasBg;
+  ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+  // 設置當前筆刷顏色
+  if (mode === 'pen') {
+    ctx.strokeStyle = cfg.penColor;
+    ctx.lineWidth = 4;
+  } else {
+    ctx.strokeStyle = cfg.eraserColor;
+    ctx.lineWidth = 30;
+  }
+}
+
+// =========================================================================
+// 🟢 7. 🔒 教師 / 大屏安全管理鎖定 (防止家長手動竄改網址進入)
+// =========================================================================
+let pendingAuthCallback = null;
+
+function checkTeacherAuth(callback) {
+  const isAuthorized = localStorage.getItem('DEVICE_AUTH_TEACHER') === 'authorized';
+  if (isAuthorized) {
+    if (callback) callback();
+    return;
+  }
+
+  pendingAuthCallback = callback;
+  const authModal = document.getElementById('teacherAuthModal');
+  if (authModal) {
+    authModal.style.display = 'flex';
+    const input = document.getElementById('teacherAuthPinInput');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+  }
+}
+
+function verifyTeacherPin() {
+  const input = document.getElementById('teacherAuthPinInput');
+  const enteredPin = (input ? input.value : '').trim();
+  const currentPin = localStorage.getItem('TEACHER_MANAGEMENT_PIN') || '8888';
+
+  if (enteredPin === currentPin) {
+    localStorage.setItem('DEVICE_AUTH_TEACHER', 'authorized');
+    const authModal = document.getElementById('teacherAuthModal');
+    if (authModal) authModal.style.display = 'none';
+
+    alert("✨ 驗證成功！此裝置已獲得教師 / 大屏管理授權。");
+    if (pendingAuthCallback) {
+      pendingAuthCallback();
+      pendingAuthCallback = null;
+    }
+  } else {
+    alert("❌ 管理 PIN 碼錯誤，無法解鎖！即將導向家長查詢頁面。");
+    cancelTeacherAuth();
+  }
+}
+
+function cancelTeacherAuth() {
+  const authModal = document.getElementById('teacherAuthModal');
+  if (authModal) authModal.style.display = 'none';
+  pendingAuthCallback = null;
+  setupParentView();
+}
+
+function saveCustomTeacherPin() {
+  const input = document.getElementById('customTeacherPinInput');
+  const newPin = (input ? input.value : '').trim();
+  if (!newPin || newPin.length < 4) {
+    alert("請輸入至少 4 碼的管理 PIN 碼！");
+    return;
+  }
+  localStorage.setItem('TEACHER_MANAGEMENT_PIN', newPin);
+  localStorage.setItem('DEVICE_AUTH_TEACHER', 'authorized');
+  alert(`✅ 管理 PIN 碼已更新為：${newPin}，請妥善保管！`);
+  if (input) input.value = '';
 }
 
   </script>
