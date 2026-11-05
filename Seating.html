@@ -179,7 +179,7 @@
       </button>
 
       <!-- 切換至大屏班務管理系統按鈕 -->
-      <a href="#" onclick="returnToMainSystem(event)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-300 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow flex items-center gap-1 cursor-pointer">
+      <a href="index.html" onclick="returnToMainSystem(event)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-300 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow flex items-center gap-1 cursor-pointer" title="返回大屏班務管理系統">
         🖥️ 大屏系統
       </a>
 
@@ -1101,14 +1101,35 @@
     }
 
     function returnToMainSystem(e) {
-      if (e) e.preventDefault();
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       const urlParams = new URLSearchParams(window.location.search);
       const role = urlParams.get('role') || 'screen';
+      const origin = urlParams.get('origin');
       const gasUrl = getGasUrl();
-      let target = 'Index.html';
-      const params = [`role=${encodeURIComponent(role)}`];
-      if (gasUrl) params.push(`gas=${encodeURIComponent(gasUrl)}`);
-      window.location.href = `${target}?${params.join('&')}`;
+      
+      const queryParams = new URLSearchParams();
+      queryParams.set('role', role);
+      if (gasUrl) {
+        queryParams.set('gasUrl', gasUrl);
+      }
+
+      // 1. 若在 Google Apps Script (script.google.com) 環境
+      if (isGAS || window.location.hostname === 'script.google.com') {
+        if (origin) {
+          window.location.href = `${origin.replace(/\/$/, '')}/index.html?${queryParams.toString()}`;
+          return;
+        }
+        const baseUrl = (gasUrl || window.location.href).split('?')[0];
+        window.location.href = `${baseUrl}?${queryParams.toString()}`;
+        return;
+      }
+
+      // 2. 若在 Vercel 或靜態伺服器環境 (小寫 index.html，防 Linux 大小寫敏感造成 404)
+      const baseOrigin = (origin || window.location.origin).replace(/\/$/, '');
+      window.location.href = `${baseOrigin}/index.html?${queryParams.toString()}`;
     }
 
     // =========================================================================
