@@ -1624,6 +1624,7 @@
         <label style="font-weight:bold; display:block; margin-bottom:5px;">Google Apps Script (GAS) 部署網址：</label>
         <input type="text" id="settingGasUrlInput" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; font-size:0.9rem;">
         <button class="btn-primary" style="width:100%; margin-top:8px; padding:8px;" onclick="saveGasUrlSetting()">💾 儲存 GAS 網址</button>
+        <button class="btn-outline" style="width:100%; margin-top:6px; padding:6px; font-size:0.85rem; color:#475569;" onclick="resetDefaultGasUrl()">🔄 恢復預設範例 GAS 網址</button>
       </div>
 
       <hr style="margin:15px 0; border:none; border-top:1px solid #e2e8f0;">
@@ -1667,7 +1668,8 @@
   </div>
 
   <script>
-    let GAS_WEB_APP_URL = "";
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbw-HyINp8zuGIu5M8Gy88d8T92Yd_WwsKolyA1sVqHZgMNmZSfqSdU8r-8XMSDhjTDzig/exec";
+    let GAS_WEB_APP_URL = DEFAULT_GAS_URL;
     const urlParams = new URLSearchParams(window.location.search);
     const userRole = urlParams.get('role') || 'screen';
     const pendingClearTimers = new Map();
@@ -1749,15 +1751,8 @@ function initGasUrl() {
     window.history.replaceState({}, document.title, newSearch);
   }
 
-  // 讀取當前裝置儲存的 GAS 網址
-  GAS_WEB_APP_URL = localStorage.getItem('GAS_WEB_APP_URL') || "";
-
-  // 若尚未綁定 GAS 網址且非家長端，提醒設定
-  if (!GAS_WEB_APP_URL && userRole !== 'parent') {
-    setTimeout(() => {
-      openSystemSettingsModal();
-    }, 500);
-  }
+  // 讀取當前裝置儲存的 GAS 網址 (若無則自動使用預設範例 GAS 網址)
+  GAS_WEB_APP_URL = localStorage.getItem('GAS_WEB_APP_URL') || DEFAULT_GAS_URL;
 }
 
 // 🟢 產生三大端點的帶參數專屬連結
@@ -1812,6 +1807,15 @@ function saveGasUrlSetting() {
   localStorage.setItem('GAS_WEB_APP_URL', inputUrl);
   GAS_WEB_APP_URL = inputUrl;
   alert("GAS 網址儲存成功！");
+  closeSystemSettingsModal();
+  location.reload();
+}
+
+function resetDefaultGasUrl() {
+  document.getElementById('settingGasUrlInput').value = DEFAULT_GAS_URL;
+  localStorage.setItem('GAS_WEB_APP_URL', DEFAULT_GAS_URL);
+  GAS_WEB_APP_URL = DEFAULT_GAS_URL;
+  alert("已重置為預設範例 GAS 網址！");
   closeSystemSettingsModal();
   location.reload();
 }
@@ -2753,8 +2757,9 @@ async function updateDynamicTitles(role) {
     // 切換至座位表
 function openSeating() {
   const currentOrigin = window.location.origin;
+  const gasParam = GAS_WEB_APP_URL ? `&gasUrl=${encodeURIComponent(GAS_WEB_APP_URL)}` : '';
   if (window.location.hostname !== 'script.google.com') {
-    window.location.href = `Seating.html?role=${encodeURIComponent(userRole)}&origin=${encodeURIComponent(currentOrigin)}`;
+    window.location.href = `Seating.html?role=${encodeURIComponent(userRole)}&origin=${encodeURIComponent(currentOrigin)}${gasParam}`;
     return;
   }
   window.location.href = `${GAS_WEB_APP_URL}?page=seating&role=${encodeURIComponent(userRole)}&origin=${encodeURIComponent(currentOrigin)}`;

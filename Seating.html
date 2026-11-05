@@ -307,26 +307,14 @@
           </div>
         </div>
         <div class="flex items-center space-x-2">
-          <button onclick="toggleApiKeyInput()" class="bg-indigo-600/60 hover:bg-indigo-500 text-white text-xs px-2.5 py-1.5 rounded-xl border border-indigo-400 transition" title="檢視或設定 API Key">
-            🔑 API Key
-          </button>
+
           <button onclick="closePhotoModal()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white text-lg font-bold flex items-center justify-center transition">
             ✕
           </button>
         </div>
       </div>
 
-      <!-- API Key 快捷設定列 (可摺疊) -->
-      <div id="apiKeyRow" class="hidden bg-slate-50 border-b border-slate-200 p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div class="flex items-center gap-2 flex-1 min-w-[280px]">
-          <span class="font-bold text-slate-600">Gemini Key:</span>
-          <input type="password" id="customApiKeyInput" placeholder="輸入 Google Gemini API Key" class="border rounded-lg px-2.5 py-1 text-xs flex-1 bg-white focus:outline-indigo-500">
-        </div>
-        <div class="flex items-center gap-2">
-          <button onclick="saveCustomApiKey()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg font-bold">儲存 Key</button>
-          <button onclick="toggleApiKeyInput()" class="text-slate-400 hover:text-slate-600 px-2">收合</button>
-        </div>
-      </div>
+
 
       <!-- 說明引導橫幅 -->
       <div class="bg-amber-50 border-b border-amber-200 p-3 sm:p-4 text-xs sm:text-sm text-amber-900 flex items-start gap-2.5 flex-shrink-0">
@@ -490,6 +478,8 @@
     // =========================================================================
     const isGAS = (typeof google !== 'undefined' && typeof google.script !== 'undefined' && typeof google.script.run !== 'undefined');
 
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbw-HyINp8zuGIu5M8Gy88d8T92Yd_WwsKolyA1sVqHZgMNmZSfqSdU8r-8XMSDhjTDzig/exec";
+
     function getGasUrl() {
       const urlParams = new URLSearchParams(window.location.search);
       const paramGas = urlParams.get('gasUrl') || urlParams.get('gas');
@@ -500,7 +490,7 @@
         const newSearch = urlParams.toString() ? '?' + urlParams.toString() : window.location.pathname;
         window.history.replaceState({}, document.title, newSearch);
       }
-      return localStorage.getItem('GAS_WEB_APP_URL') || '';
+      return localStorage.getItem('GAS_WEB_APP_URL') || DEFAULT_GAS_URL;
     }
 
     let state = {
@@ -1122,48 +1112,22 @@
     }
 
     // =========================================================================
-    // 🤖 GEMINI API 模型探索函式 (先上網搜尋最新可用模型，再發起呼叫)
+    // 🤖 GEMINI API 模型探索函式 (透過 GAS 後端安全取得最新可用模型)
     // =========================================================================
-    function getActiveGeminiApiKey() {
-      return localStorage.getItem('CUSTOM_GEMINI_API_KEY') || '';
-    }
-
-    async function searchLatestGeminiModel(customKey) {
-      const key = customKey || getActiveGeminiApiKey();
+    async function searchLatestGeminiModel() {
       const defaultModel = "gemini-2.5-flash";
-      updateModelUI('搜尋最新模型中...');
-
-      if (!key) {
-        updateModelUI(defaultModel + " (預設)");
-        return defaultModel;
-      }
+      updateModelUI('查詢最新模型中...');
 
       try {
-        const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`;
-        const res = await fetch(listUrl);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.models && Array.isArray(data.models)) {
-            const flashModels = data.models
-              .filter(m => {
-                const name = (m.name || '').toLowerCase();
-                const hasGen = m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent");
-                return hasGen && name.includes("flash") && !name.includes("omni") && !name.includes("exp");
-              })
-              .map(m => m.name.replace("models/", ""));
-
-            if (flashModels.length > 0) {
-              flashModels.sort((a, b) => b.localeCompare(a, undefined, { numeric: true, sensitivity: 'base' }));
-              const bestModel = flashModels[0];
-              state.latestGeminiModel = bestModel;
-              localStorage.setItem('GEMINI_LATEST_MODEL', bestModel);
-              updateModelUI(bestModel + " (最新聯網)");
-              return bestModel;
-            }
-          }
+        const res = await callBackend('searchLatestGeminiModel');
+        if (res && res.success && res.model) {
+          state.latestGeminiModel = res.model;
+          localStorage.setItem('GEMINI_LATEST_MODEL', res.model);
+          updateModelUI(res.model);
+          return res.model;
         }
       } catch (err) {
-        console.warn("⚠️ 聯網搜尋 Gemini 模型失敗，使用預設值:", err);
+        console.warn("⚠️ 查詢 Gemini 模型失敗，使用預設值:", err);
       }
 
       state.latestGeminiModel = defaultModel;
@@ -1173,34 +1137,13 @@
 
     function manualSearchModel() {
       searchLatestGeminiModel().then(m => {
-        alert(`已完成搜尋！當前使用最新 Gemini 視覺模型：【${m}】`);
+        alert(`已完成查詢！當前使用 Gemini 視覺模型：【${m}】`);
       });
     }
 
     function updateModelUI(name) {
       const badge = document.getElementById('modelNameBadge');
       if (badge) badge.innerText = name;
-    }
-
-    function toggleApiKeyInput() {
-      const row = document.getElementById('apiKeyRow');
-      row.classList.toggle('hidden');
-      const input = document.getElementById('customApiKeyInput');
-      input.value = getActiveGeminiApiKey();
-    }
-
-    function saveCustomApiKey() {
-      const val = document.getElementById('customApiKeyInput').value.trim();
-      if (val) {
-        localStorage.setItem('CUSTOM_GEMINI_API_KEY', val);
-        alert('API Key 已儲存！正在聯網搜尋最新模型...');
-        searchLatestGeminiModel(val);
-      } else {
-        localStorage.removeItem('CUSTOM_GEMINI_API_KEY');
-        alert('已清除自訂 Key。');
-        searchLatestGeminiModel();
-      }
-      toggleApiKeyInput();
     }
 
     // =========================================================================
@@ -1338,10 +1281,10 @@
       // 1. 確保最新模型已先被搜尋確認
       const modelToUse = await searchLatestGeminiModel();
 
+      // 2. 統一由 GAS 後端調用 Gemini 視覺辨識 (與手寫送出相同邏輯)，安全免曝露金鑰
       const res = await callBackend('uploadStudentPhoto', {
         base64Image: task.base64,
         mimeType: 'image/jpeg',
-        apiKey: getActiveGeminiApiKey(),
         manualSeatNo: task.manualSeatNo || null,
         manualName: task.manualName || ''
       });
@@ -1354,50 +1297,10 @@
         updateStudentLocalData(task.seatNumber, task.studentName, task.photoUrl);
         return res;
       } else {
-        // 若在離線模式或未綁定 GAS，嘗試直接調用前端 Gemini API
-        const key = getActiveGeminiApiKey();
-        if (key && !task.manualSeatNo) {
-          try {
-            const aiRes = await callDirectGeminiVision(task.base64, modelToUse, key);
-            if (aiRes && aiRes.seat_number) {
-              task.status = 'success';
-              task.seatNumber = String(aiRes.seat_number);
-              task.studentName = aiRes.name || `學生${task.seatNumber}`;
-              task.photoUrl = task.thumbnail;
-              updateStudentLocalData(task.seatNumber, task.studentName, task.photoUrl);
-              return;
-            }
-          } catch (e) {
-            console.warn("前端直連 Gemini 辨識失敗:", e);
-          }
-        }
-
         task.status = 'failed';
         task.errorMessage = (res && res.error) ? res.error : '未能從白紙辨識出座號數字';
         throw new Error(task.errorMessage);
       }
-    }
-
-    // 前端直接呼叫 Gemini 視覺 API 備用通道
-    async function callDirectGeminiVision(base64, model, apiKey) {
-      const prompt = `請辨識白紙上的【座號】與【姓名】，輸出嚴格 JSON 格式：{"seat_number": 數字, "name": "姓名"}`;
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type: 'image/jpeg', data: base64 } }
-            ]
-          }],
-          generationConfig: { response_mime_type: "application/json" }
-        })
-      });
-      const data = await res.json();
-      const raw = data.candidates[0].content.parts[0].text;
-      return JSON.parse(raw);
     }
 
     function updateStudentLocalData(seatNo, name, photoUrl) {

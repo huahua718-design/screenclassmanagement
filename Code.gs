@@ -1,5 +1,42 @@
-// 請填入您的 Gemini API Key
-const GEMINI_API_KEY = "請填入您的 Gemini API Key";
+// 預備預設 Gemini API Key (系統後端保護，不傳給前端瀏覽器)
+// 預備預設 Gemini API Key (可於 GAS「專案設定 ⚙️ ➔ 指令碼屬性」填入 GEMINI_API_KEY，或於試算表 Settings 分頁填入，以策安全不外洩)
+const DEFAULT_FALLBACK_API_KEY = "";
+
+/**
+ * 取得 Gemini API Key：
+ * 1. 優先讀取 Google 試算表中的「Settings」或「設定」分頁 (欄A為 GEMINI_API_KEY, 欄B為金鑰)
+ * 2. 其次讀取 GAS 的指令碼屬性 (Script Properties)
+ * 3. 若皆未填寫，自動使用系統後端預設 Key
+ */
+function getGeminiApiKey() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (ss) {
+      const settingsSheet = ss.getSheetByName("Settings") || ss.getSheetByName("設定");
+      if (settingsSheet && settingsSheet.getLastRow() >= 2) {
+        const data = settingsSheet.getDataRange().getValues();
+        for (let i = 0; i < data.length; i++) {
+          const keyName = String(data[i][0] || "").trim().toUpperCase();
+          if (keyName === "GEMINI_API_KEY" || keyName === "GEMINI API KEY" || keyName === "API_KEY" || keyName === "GEMINI_KEY" || keyName === "GEMINI金鑰") {
+            const val = String(data[i][1] || "").trim();
+            if (val && !val.includes("請填入") && !val.includes("你的API_KEY")) {
+              return val;
+            }
+          }
+        }
+      }
+    }
+    const propKey = PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY");
+    if (propKey && propKey.trim()) {
+      return propKey.trim();
+    }
+  } catch (err) {
+    Logger.log("讀取 Gemini API Key 失敗: " + err);
+  }
+  return DEFAULT_FALLBACK_API_KEY;
+}
+
+const GEMINI_API_KEY = getGeminiApiKey();
 const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
 
 // 計算當日與隔日字串 (以 GMT+8 台灣時間為準)
@@ -61,7 +98,7 @@ function doGet(e) {
     template.origin = (e && e.parameter && e.parameter.origin) ? e.parameter.origin : '';
     template.role = role;
     template.className = className;
-    template.geminiApiKey = (typeof GEMINI_API_KEY !== 'undefined' && GEMINI_API_KEY !== "請填入您的 Gemini API Key") ? GEMINI_API_KEY : '';
+    template.geminiApiKey = ''; // 敏感金鑰絕不傳入前端樣板，統一由 GAS 後端安全調用
     template.mode = (e && e.parameter && e.parameter.mode) ? e.parameter.mode : '';
 
     return template.evaluate()
@@ -190,10 +227,11 @@ function doPost(e) {
 }
 
 // 🤖 動態取得最新 Flash 模型
-function getLatestFlashModelName() {
+function getLatestFlashModelName(customKey) {
   const defaultModel = "gemini-2.5-flash";
-  if (!GEMINI_API_KEY) return defaultModel;
-  const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`;
+  const apiKey = customKey || getGeminiApiKey();
+  if (!apiKey) return defaultModel;
+  const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
   
   try {
     const response = UrlFetchApp.fetch(listUrl, { "muteHttpExceptions": true });
@@ -202,7 +240,7 @@ function getLatestFlashModelName() {
     if (result.models && Array.isArray(result.models)) {
       const flashModels = result.models
         .filter(m => {
-          const name = m.name.toLowerCase();
+          const name = (m.name || '').toLowerCase();
           const hasGen = m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent");
           return hasGen && name.includes("flash") && !name.includes("omni") && !name.includes("exp");
         })
@@ -335,8 +373,9 @@ function processHandwritingImage(base64Image, todayDate) {
     }]
   };
 
-  const modelName = getLatestFlashModelName();
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+  const apiKey = getGeminiApiKey();
+  const modelName = getLatestFlashModelName(apiKey);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
   try {
     const response = UrlFetchApp.fetch(url, { "method": "post", "contentType": "application/json", "payload": JSON.stringify(payload), "muteHttpExceptions": true });
@@ -440,8 +479,9 @@ function processAudioInput(base64Audio, mimeType, todayDate) {
     }]
   };
 
-  const modelName = getLatestFlashModelName();
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+  const apiKey = getGeminiApiKey();
+  const modelName = getLatestFlashModelName(apiKey);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
   
   try {
     const response = UrlFetchApp.fetch(url, {
@@ -635,8 +675,9 @@ function processMissingAudio(base64Audio, mimeType, defaultItem, todayDate) {
     }]
   };
 
-  const modelName = getLatestFlashModelName();
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+  const apiKey = getGeminiApiKey();
+  const modelName = getLatestFlashModelName(apiKey);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
   
   try {
     const response = UrlFetchApp.fetch(url, {
@@ -1101,14 +1142,34 @@ function getClassTitle() {
   }
 }
 
-// 🟢 讀取 Students 分頁 C1 儲存格的教師大屏管理 PIN 碼 (預設: 8888)
+// 🟢 讀取教師大屏管理 PIN 碼 (優先讀取 Settings 分頁，次之相容 Students C1，預設: 8888)
 function getTeacherPin() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) return "8888";
+    
+    // 1. 優先從 Settings 分頁讀取
+    const settingsSheet = ss.getSheetByName("Settings") || ss.getSheetByName("設定");
+    if (settingsSheet && settingsSheet.getLastRow() >= 2) {
+      const data = settingsSheet.getDataRange().getValues();
+      for (let i = 0; i < data.length; i++) {
+        const keyName = String(data[i][0] || "").trim().toUpperCase();
+        if (keyName === "TEACHER_PIN" || keyName === "PIN" || keyName === "TEACHER PIN" || keyName === "PIN碼") {
+          const val = String(data[i][1] || "").trim();
+          if (val) return val;
+        }
+      }
+    }
+
+    // 2. 次之相容 Students 分頁 C1 儲存格
     const sheet = ss.getSheetByName("Students");
-    if (!sheet) return "8888";
-    const val = sheet.getRange("C1").getValue();
-    return (val && String(val).trim() !== "") ? String(val).trim() : "8888";
+    if (sheet) {
+      const val = sheet.getRange("C1").getValue();
+      if (val && String(val).trim() !== "") {
+        return String(val).trim();
+      }
+    }
+    return "8888";
   } catch (err) {
     return "8888";
   }
@@ -1219,7 +1280,7 @@ function exportSeatingToSheet(exportData) {
  * 上網動態搜尋 Google Gemini 最新 Vision / Flash 模型
  */
 function searchLatestGeminiVisionModel(apiKey) {
-  const key = apiKey || (typeof GEMINI_API_KEY !== 'undefined' ? GEMINI_API_KEY : '');
+  const key = apiKey || getGeminiApiKey();
   const defaultModel = "gemini-2.5-flash";
   if (!key || key === "請填入您的 Gemini API Key") return defaultModel;
   
@@ -1315,18 +1376,18 @@ function uploadAndRecognizeStudentPhoto(data) {
     let modelUsed = "手動指定";
     let recognitionSuccess = false;
 
-    // 1. 若未手動指定座號，上網搜尋最新模型並呼叫 Gemini Vision API 辨識
+    // 1. 若未手動指定座號，使用手寫相同的 Gemini 呼叫邏輯進行 AI 辨識
     if (!seatNo) {
-      modelUsed = searchLatestGeminiVisionModel(data.apiKey);
-      const key = data.apiKey || (typeof GEMINI_API_KEY !== 'undefined' ? GEMINI_API_KEY : '');
-      if (!key || key === "請填入您的 Gemini API Key") {
-        return { success: false, error: "未設定 Gemini API Key，無法進行 AI 視覺辨識，請手動指定座號或填入 API Key！" };
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) {
+        return { success: false, error: "未設定 Gemini API Key，無法進行 AI 視覺辨識，請於試算表 Settings 分頁填入 API Key！" };
       }
+      modelUsed = getLatestFlashModelName(apiKey);
 
       const visionPrompt = `
 你是一位精準的班級照片分析助手。
 學生正手持或在胸前舉著一張白紙，紙上寫有學生的【座號】與【姓名】。
-請仔細辨識照片中白紙上的文字，並輸出嚴格的純 JSON 格式：
+請仔細辨識照片中白紙上的手寫文字內容，並輸出嚴格的純 JSON 格式：
 {
   "seat_number": 數字或 null,
   "name": "學生姓名"
@@ -1341,16 +1402,12 @@ function uploadAndRecognizeStudentPhoto(data) {
         "contents": [{
           "parts": [
             { "text": visionPrompt },
-            { "inline_data": { "mime_type": mimeType, "data": cleanBase64 } }
+            { "inline_data": { "mime_type": "image/jpeg", "data": cleanBase64 } }
           ]
-        }],
-        "generationConfig": {
-          "response_mime_type": "application/json",
-          "temperature": 0.1
-        }
+        }]
       };
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelUsed}:generateContent?key=${key}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelUsed}:generateContent?key=${apiKey}`;
       const response = UrlFetchApp.fetch(url, {
         "method": "post",
         "contentType": "application/json",
