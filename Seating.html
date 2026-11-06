@@ -179,6 +179,11 @@
       </button>
 
       <!-- 切換至大屏班務管理系統按鈕 -->
+      <!-- 🌟 一鍵建立專屬試算表按鈕 (僅在 Demo 試用模式顯示，正式版自動隱藏) -->
+      <button id="seatingCopyTemplateBtn" onclick="openCopyTemplateModal()" class="bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-300 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow flex items-center gap-1 cursor-pointer demo-only" style="display:none;" title="建立專屬試算表轉為永久正式版">
+        📋 建立正式範本
+      </button>
+
       <a href="index.html" onclick="returnToMainSystem(event)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 border border-amber-300 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow flex items-center gap-1 cursor-pointer" title="返回大屏班務管理系統">
         🖥️ 大屏系統
       </a>
@@ -480,6 +485,46 @@
 
     const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbw-HyINp8zuGIu5M8Gy88d8T92Yd_WwsKolyA1sVqHZgMNmZSfqSdU8r-8XMSDhjTDzig/exec";
 
+    function isDemoMode() {
+      const gasUrl = localStorage.getItem('GAS_WEB_APP_URL') || DEFAULT_GAS_URL;
+      return !gasUrl || gasUrl.trim() === DEFAULT_GAS_URL.trim();
+    }
+
+    function getDemoTenantId() {
+      const currentParams = new URLSearchParams(window.location.search);
+      const paramTenant = currentParams.get('tenant') || currentParams.get('tenantId');
+      if (paramTenant) {
+        localStorage.setItem('DEMO_TENANT_ID', paramTenant.trim());
+        return paramTenant.trim();
+      }
+      return localStorage.getItem('DEMO_TENANT_ID') || 'demo';
+    }
+
+    function updateSystemModeUI() {
+      const isDemo = isDemoMode();
+      const demoElements = document.querySelectorAll('.demo-only');
+      demoElements.forEach(el => {
+        if (isDemo) {
+          el.style.removeProperty('display');
+          if (el.tagName === 'BUTTON') {
+            el.style.display = 'inline-flex';
+          }
+        } else {
+          el.style.setProperty('display', 'none', 'important');
+        }
+      });
+    }
+
+    function openCopyTemplateModal() {
+      const modal = document.getElementById('copyTemplateModal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeCopyTemplateModal() {
+      const modal = document.getElementById('copyTemplateModal');
+      if (modal) modal.style.display = 'none';
+    }
+
     function getGasUrl() {
       const urlParams = new URLSearchParams(window.location.search);
       const paramGas = urlParams.get('gasUrl') || urlParams.get('gas');
@@ -554,6 +599,7 @@
       renderPodium();
       renderAll();
       updateGasStatusUI();
+      updateSystemModeUI();
     })();
 
     // =========================================================================
@@ -618,10 +664,15 @@
       }
 
       try {
+        const isDemo = isDemoMode();
+        const bodyPayload = isDemo
+          ? { action, tenantId: getDemoTenantId(), ...payload }
+          : { action, ...payload };
+
         const response = await fetch(gasUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action, ...payload })
+          body: JSON.stringify(bodyPayload)
         });
         const json = await response.json();
         return json;
@@ -1115,6 +1166,9 @@
       if (gasUrl) {
         queryParams.set('gasUrl', gasUrl);
       }
+      if (isDemoMode()) {
+        queryParams.set('tenant', getDemoTenantId());
+      }
 
       // 1. 若在 Google Apps Script (script.google.com) 環境
       if (isGAS || window.location.hostname === 'script.google.com') {
@@ -1584,5 +1638,38 @@
       await syncWithCloudData();
     }
   </script>
+  <!-- 🌟 一鍵複製試算表範本 / 轉正式版引導 Modal -->
+  <div id="copyTemplateModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" style="display:none;">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 text-left">
+      <h3 class="text-xl font-black text-slate-800 text-center mb-3">
+        🌟 建立您的專屬班級系統（轉為永久正式版）
+      </h3>
+      <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
+        目前您使用的是公共 <strong>7 天試用環境</strong>。轉為正式版後，資料將永久保存在您個人的 Google 雲端硬碟，享有個人獨立配額與專屬金鑰，完全免費且安全！
+      </p>
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mb-4 text-xs text-slate-700 leading-relaxed">
+        <div class="font-bold text-slate-800 mb-1.5 text-sm">🚀 轉為正式版只需三步驟：</div>
+        <ol class="list-decimal list-inside space-y-1">
+          <li>在您自己的 Google 帳號中<strong>「建立試算表副本」</strong>。</li>
+          <li>在該試算表中開啟<strong>「Apps Script」</strong>，貼上專案提供的 <code>Code.gs</code>。</li>
+          <li>部署為<strong>網頁應用程式 (誰可以存取：任何人)</strong>，取得專屬網址並貼回設定。</li>
+        </ol>
+      </div>
+      <div class="flex flex-col gap-2.5 mb-4">
+        <a href="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/copy" target="_blank" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold py-2.5 rounded-xl text-sm text-center shadow transition block">
+          📋 前往 Google 試算表建立副本
+        </a>
+        <a href="班級事務系統_Google試算表範例.xlsx" download class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs text-center border border-slate-300 transition block">
+          📥 或下載本機 Excel 範例檔 (.xlsx)
+        </a>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="closeCopyTemplateModal()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 rounded-xl text-sm transition">
+          關閉
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
