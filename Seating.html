@@ -466,12 +466,17 @@
         </div>
       </div>
 
-      <div class="flex gap-2.5 mt-5">
-        <button onclick="saveGasUrlAndSync()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold py-2.5 rounded-xl text-sm transition shadow">
-          儲存並同步試算表資料
-        </button>
-        <button onclick="closeGasModal()" class="px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl text-sm transition">
-          關閉
+      <div class="flex flex-col gap-2.5 mt-5">
+        <div class="flex gap-2.5">
+          <button onclick="saveGasUrlAndSync()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold py-2.5 rounded-xl text-sm transition shadow cursor-pointer">
+            儲存並同步試算表資料
+          </button>
+          <button onclick="closeGasModal()" class="px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl text-sm transition cursor-pointer">
+            關閉
+          </button>
+        </div>
+        <button type="button" onclick="resetToDefaultGasUrl()" class="w-full bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold py-2 rounded-xl text-xs transition border border-amber-300 flex items-center justify-center gap-1.5 cursor-pointer">
+          🔄 清除自訂網址與快取，恢復官方預設 Demo 試算表
         </button>
       </div>
     </div>
@@ -498,6 +503,14 @@
         return paramTenant.trim();
       }
       return localStorage.getItem('DEMO_TENANT_ID') || 'demo';
+    }
+
+    function getStorageKey(key) {
+      if (isDemoMode()) {
+        const tenant = getDemoTenantId();
+        return `DEMO_${tenant}_${key}`;
+      }
+      return key;
     }
 
     function updateSystemModeUI() {
@@ -539,7 +552,7 @@
     }
 
     let state = {
-      className: localStorage.getItem('CLASS_NAME') || '智慧教室',
+      className: localStorage.getItem(getStorageKey('CLASS_NAME')) || (isDemoMode() ? `${getDemoTenantId()} 班` : '智慧教室'),
       allStudents: [],       // 每筆包含 { id, name, photoUrl }
       rows: 7,
       cols: 7,
@@ -564,8 +577,8 @@
       document.getElementById('rowInput').value = state.rows;
       document.getElementById('colInput').value = state.cols;
 
-      // 2. 優先嘗試讀取本地快取的座位狀態
-      const cachedState = localStorage.getItem('SEATING_LAYOUT_STATE');
+      // 2. 優先嘗試讀取本地快取的座位狀態 (使用租戶隔離 key)
+      const cachedState = localStorage.getItem(getStorageKey('SEATING_LAYOUT_STATE'));
       if (cachedState) {
         try {
           const parsed = JSON.parse(cachedState);
@@ -582,17 +595,32 @@
         initEmptyGrid();
       }
 
-      // 3. 讀取本地學生快取 (若無則先置入預設 1~30 號)
-      const cachedStudents = localStorage.getItem('CACHED_STUDENTS');
+      // 3. 讀取本地學生快取 (若無則依模式置入預設學生)
+      const cachedStudents = localStorage.getItem(getStorageKey('CACHED_STUDENTS'));
       if (cachedStudents) {
         try { state.allStudents = JSON.parse(cachedStudents); } catch(e) {}
       }
       if (!state.allStudents || state.allStudents.length === 0) {
-        state.allStudents = Array.from({ length: 30 }, (_, i) => ({
-          id: String(i + 1),
-          name: `學生${String(i + 1).padStart(2, '0')}`,
-          photoUrl: ''
-        }));
+        if (isDemoMode()) {
+          state.allStudents = [
+            { id: "1", name: "王小明", photoUrl: "" },
+            { id: "2", name: "李大華", photoUrl: "" },
+            { id: "3", name: "張美美", photoUrl: "" },
+            { id: "4", name: "陳志豪", photoUrl: "" },
+            { id: "5", name: "林雅婷", photoUrl: "" },
+            { id: "6", name: "黃俊傑", photoUrl: "" },
+            { id: "7", name: "吳淑芬", photoUrl: "" },
+            { id: "8", name: "蔡宗憲", photoUrl: "" },
+            { id: "9", name: "許瑋甯", photoUrl: "" },
+            { id: "10", name: "鄭家豪", photoUrl: "" }
+          ];
+        } else {
+          state.allStudents = Array.from({ length: 30 }, (_, i) => ({
+            id: String(i + 1),
+            name: `學生${String(i + 1).padStart(2, '0')}`,
+            photoUrl: ''
+          }));
+        }
       }
 
       // 4. 立即完成初次渲染
@@ -632,11 +660,14 @@
       if (isGAS) {
         dot.className = "w-2 h-2 rounded-full bg-emerald-400";
         text.innerText = "GAS 原生環境";
+      } else if (isDemoMode()) {
+        dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+        text.innerText = `Demo試用 (${getDemoTenantId()})`;
       } else if (gasUrl) {
         dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-        text.innerText = "雲端同步中";
+        text.innerText = "正式版試算表";
       } else {
-        dot.className = "w-2 h-2 rounded-full bg-amber-400";
+        dot.className = "w-2 h-2 rounded-full bg-slate-400";
         text.innerText = "設定 GAS 網址";
       }
     }
@@ -689,8 +720,8 @@
         if (res && res.students && res.students.length > 0) {
           state.className = res.className || state.className;
           state.allStudents = res.students;
-          localStorage.setItem('CLASS_NAME', state.className);
-          localStorage.setItem('CACHED_STUDENTS', JSON.stringify(state.allStudents));
+          localStorage.setItem(getStorageKey('CLASS_NAME'), state.className);
+          localStorage.setItem(getStorageKey('CACHED_STUDENTS'), JSON.stringify(state.allStudents));
           document.getElementById('classTitle').innerText = `${state.className} - 座位表`;
         }
 
@@ -706,10 +737,50 @@
           mergePhotoUrlsIntoGrid();
         }
 
+        // 🌟 關鍵校驗：驗證並清理網格上的幽靈學生 (舊快取殘留學生若不在最新名冊中，自動移出網格)
+        validateAndCleanGrid();
+
         renderPodium();
         renderAll();
       } catch (e) {
         console.warn("雲端同步例外:", e);
+      }
+    }
+
+    function validateAndCleanGrid() {
+      if (!state.allStudents || state.allStudents.length === 0) return;
+      const validMap = new Map();
+      state.allStudents.forEach(s => validMap.set(String(s.id), s));
+
+      let dirty = false;
+      if (Array.isArray(state.grid)) {
+        state.grid.forEach(row => {
+          if (Array.isArray(row)) {
+            row.forEach(cell => {
+              if (cell && cell.student) {
+                const sid = String(cell.student.id);
+                if (!validMap.has(sid)) {
+                  // 學生不在當前班級名冊內（可能是舊班級快取），予以清除
+                  cell.student = null;
+                  cell.isCovered = false;
+                  cell.isDrawn = false;
+                  dirty = true;
+                } else {
+                  // 學生在名冊內，確保姓名與最新名冊一致
+                  const currentInfo = validMap.get(sid);
+                  if (cell.student.name !== currentInfo.name) {
+                    cell.student.name = currentInfo.name;
+                    dirty = true;
+                  }
+                }
+              }
+            });
+          }
+        });
+      }
+
+      if (dirty) {
+        localStorage.setItem(getStorageKey('SEATING_LAYOUT_STATE'), JSON.stringify(state));
       }
     }
 
@@ -1117,10 +1188,10 @@
     }
 
     async function saveCurrentState() {
-      // 永遠先存入本地 localStorage 作為離線與防呆保護
-      localStorage.setItem('SEATING_LAYOUT_STATE', JSON.stringify(state));
-      localStorage.setItem('CLASS_NAME', state.className);
-      localStorage.setItem('CACHED_STUDENTS', JSON.stringify(state.allStudents));
+      // 永遠先存入本地 localStorage 作為離線與防呆保護 (使用租戶隔離 key)
+      localStorage.setItem(getStorageKey('SEATING_LAYOUT_STATE'), JSON.stringify(state));
+      localStorage.setItem(getStorageKey('CLASS_NAME'), state.className);
+      localStorage.setItem(getStorageKey('CACHED_STUDENTS'), JSON.stringify(state.allStudents));
 
       const res = await callBackend('saveSeatingState', { state: state });
       if (res && res.success) {
@@ -1633,9 +1704,21 @@
 
       localStorage.setItem('GAS_WEB_APP_URL', inputVal);
       updateGasStatusUI();
+      updateSystemModeUI();
       alert('GAS 網址已儲存！正在同步 Google 試算表資料...');
       closeGasModal();
       await syncWithCloudData();
+    }
+
+    function resetToDefaultGasUrl() {
+      localStorage.removeItem('GAS_WEB_APP_URL');
+      localStorage.removeItem(getStorageKey('CACHED_STUDENTS'));
+      localStorage.removeItem(getStorageKey('SEATING_LAYOUT_STATE'));
+      localStorage.removeItem(getStorageKey('CLASS_NAME'));
+      updateGasStatusUI();
+      updateSystemModeUI();
+      alert('已重置為官方 Demo 試用環境！系統將重新載入。');
+      window.location.reload();
     }
   </script>
   <!-- 🌟 一鍵複製試算表範本 / 轉正式版引導 Modal -->

@@ -1789,6 +1789,14 @@
       }
     }
 
+    function getStorageKey(key) {
+      if (isDemoMode()) {
+        const tenant = getDemoTenantId();
+        return `DEMO_${tenant}_${key}`;
+      }
+      return key;
+    }
+
     function updateSystemModeUI() {
       const isDemo = isDemoMode();
       const tenantId = getDemoTenantId();
@@ -3315,8 +3323,8 @@ function loadLotteryStudents() {
     const tagEl = document.getElementById('lotteryClassTag');
     if (tagEl) tagEl.innerText = className;
 
-    // 1. 優先從座位表分頁儲存的狀態 (SEATING_LAYOUT_STATE) 讀取
-    const savedStateStr = localStorage.getItem('SEATING_LAYOUT_STATE');
+    // 1. 優先從座位表分頁儲存的狀態 (SEATING_LAYOUT_STATE) 讀取 (支援租戶隔離)
+    const savedStateStr = localStorage.getItem(getStorageKey('SEATING_LAYOUT_STATE'));
     if (savedStateStr) {
       const stateObj = JSON.parse(savedStateStr);
       if (stateObj && stateObj.grid && Array.isArray(stateObj.grid)) {
@@ -3507,7 +3515,7 @@ function startSlotSpinning() {
 // 同步抽中紀錄回 localStorage 中的座位表狀態
 function syncDrawnStateToSeating(studentId) {
   try {
-    const savedStateStr = localStorage.getItem('SEATING_LAYOUT_STATE');
+    const savedStateStr = localStorage.getItem(getStorageKey('SEATING_LAYOUT_STATE'));
     if (!savedStateStr) return;
     const stateObj = JSON.parse(savedStateStr);
     if (!stateObj || !stateObj.grid) return;
@@ -3520,19 +3528,19 @@ function syncDrawnStateToSeating(studentId) {
         }
       }
     }
-    localStorage.setItem('SEATING_LAYOUT_STATE', JSON.stringify(stateObj));
+    localStorage.setItem(getStorageKey('SEATING_LAYOUT_STATE'), JSON.stringify(stateObj));
   } catch (err) {}
 }
 
 function resetLotteryPool() {
   lotteryDrawnSet.clear();
   try {
-    const savedStateStr = localStorage.getItem('SEATING_LAYOUT_STATE');
+    const savedStateStr = localStorage.getItem(getStorageKey('SEATING_LAYOUT_STATE'));
     if (savedStateStr) {
       const stateObj = JSON.parse(savedStateStr);
       if (stateObj && stateObj.grid) {
         stateObj.grid.forEach(row => row.forEach(cell => { if (cell) cell.isDrawn = false; }));
-        localStorage.setItem('SEATING_LAYOUT_STATE', JSON.stringify(stateObj));
+        localStorage.setItem(getStorageKey('SEATING_LAYOUT_STATE'), JSON.stringify(stateObj));
       }
     }
   } catch (e) {}
