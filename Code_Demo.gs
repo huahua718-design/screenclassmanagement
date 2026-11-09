@@ -3,10 +3,11 @@
  * 🏫 智慧大屏班務系統 - 【公共 Demo 展示與 7 天試用專用版】
  * =========================================================================
  * ⚠️ 注意事項：
- * 1. 本檔案專門部署在展示用、體驗用的公共 GAS 專案上。
- * 2. 支援「使用者名稱 / 班級代碼 (Tenant ID)」多租戶隔離，多位老師同時試用互不干擾。
- * 3. 內建 7 天過期資料定時自動清理程序 (autoCleanupExpiredDemoData)。
- * 4. 若教師要建立正式獨立的班級系統，請使用專案根目錄的【純淨正式版 Code.gs】。
+ * 1. 本檔案專門部署在展示用、體驗用的公共 GAS 專案上 (試算表 B)。
+ * 2. 完整支援大屏前端所有 API：今日任務、提醒事項、缺交銷案看板、座位表、家長登入。
+ * 3. 支援「使用者名稱 / 班級代碼 (Tenant ID)」多租戶隔離，多位老師同時試用互不干擾。
+ * 4. 首次連線自動播種 10 名學生與範例作業，開箱即有完整豐富體驗。
+ * 5. 內建 7 天過期資料定時自動清理程序 (autoCleanupExpiredDemoData)。
  * =========================================================================
  */
 
@@ -57,6 +58,19 @@ const todayDate = Utilities.formatDate(now, "GMT+8", "yyyy-MM-dd");
 const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 const tomorrowDate = Utilities.formatDate(tomorrow, "GMT+8", "yyyy-MM-dd");
 
+function normalizeDateStr(dateVal) {
+  if (!dateVal) return "";
+  if (dateVal instanceof Date) {
+    return Utilities.formatDate(dateVal, "GMT+8", "yyyy-MM-dd");
+  }
+  let s = String(dateVal).trim();
+  let m = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+  if (m) {
+    return `${m[1]}-${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+  }
+  return s;
+}
+
 // =========================================================================
 // 🏢 多租戶資料庫初始化與管理模組
 // =========================================================================
@@ -65,6 +79,7 @@ function getTenantId(data, e) {
   let tid = '';
   if (data && data.tenantId) tid = String(data.tenantId).trim();
   else if (e && e.parameter && e.parameter.tenantId) tid = String(e.parameter.tenantId).trim();
+  else if (e && e.parameter && e.parameter.tenant) tid = String(e.parameter.tenant).trim();
   return tid ? tid : 'demo';
 }
 
@@ -72,12 +87,12 @@ function ensureDemoSheetsExist(ss) {
   if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
   
   const sheetDefs = [
-    { name: "Demo_Tenants", headers: ["Tenant_ID", "建立時間", "最後活動時間", "班級名稱", "PIN碼"] },
+    { name: "Demo_Tenants", headers: ["Tenant_ID", "建立時間", "最後活動時間", "班級名稱", "PIN碼", "座位表JSON"] },
     { name: "Students", headers: ["Tenant_ID", "座號", "姓名", "密碼", "未繳項目", "照片網址", "辨識狀態"] },
     { name: "All_Records", headers: ["Tenant_ID", "紀錄ID", "登記時間", "類別", "內容範圍", "執行日期", "來源"] },
     { name: "Missing_Items", headers: ["Tenant_ID", "紀錄ID", "登記日期", "學生座號", "項目名稱", "狀態", "銷案時間"] },
     { name: "Seating_Photos", headers: ["Tenant_ID", "座號", "姓名", "座位編號", "照片網址", "辨識狀態", "更新時間"] },
-    { name: "Seating_State", headers: ["Tenant_ID", "座位佈局JSON", "更新時間"] }
+    { name: "Settings", headers: ["設定項目", "設定值", "說明與備註"] }
   ];
 
   sheetDefs.forEach(def => {
@@ -109,21 +124,21 @@ function initTenantIfNeeded(ss, tenantId) {
   const nowIso = new Date().toISOString();
 
   if (foundRow > -1) {
-    // 更新最後活躍時間
     tSheet.getRange(foundRow, 3).setValue(nowIso);
     return;
   }
 
-  // 新租戶：註冊並播種 10 名預設學生
-  tSheet.appendRow([tenantId, nowIso, nowIso, `${tenantId} 班`, "8888"]);
+  // 新租戶：註冊租戶
+  tSheet.appendRow([tenantId, nowIso, nowIso, `${tenantId} 班`, "8888", ""]);
 
+  // 1. 播種 10 名預設學生
   const sSheet = ss.getSheetByName("Students");
   const defaultStudents = [
-    [tenantId, "1", "王小明", "1234", "", "", "正常"],
+    [tenantId, "1", "王小明", "1234", "數學習作第 5 頁", "", "正常"],
     [tenantId, "2", "李大華", "1234", "", "", "正常"],
     [tenantId, "3", "張美美", "1234", "", "", "正常"],
     [tenantId, "4", "陳志豪", "1234", "", "", "正常"],
-    [tenantId, "5", "林雅婷", "1234", "", "", "正常"],
+    [tenantId, "5", "林雅婷", "1234", "數學習作第 5 頁", "", "正常"],
     [tenantId, "6", "黃俊傑", "1234", "", "", "正常"],
     [tenantId, "7", "吳淑芬", "1234", "", "", "正常"],
     [tenantId, "8", "蔡宗憲", "1234", "", "", "正常"],
@@ -132,10 +147,20 @@ function initTenantIfNeeded(ss, tenantId) {
   ];
   defaultStudents.forEach(row => sSheet.appendRow(row));
 
-  // 播種預設聯絡簿
+  // 2. 播種今日任務與明日提醒
   const rSheet = ss.getSheetByName("All_Records");
-  rSheet.appendRow([tenantId, "REC-DEMO-1", Utilities.formatDate(now, "GMT+8", "yyyy-MM-dd HH:mm:ss"), "作業", "國語第 1 課生字", tomorrowDate, "系統預設"]);
-  rSheet.appendRow([tenantId, "REC-DEMO-2", Utilities.formatDate(now, "GMT+8", "yyyy-MM-dd HH:mm:ss"), "提醒事項", "帶彩色筆、美勞剪刀", tomorrowDate, "系統預設"]);
+  const timeNowStr = Utilities.formatDate(now, "GMT+8", "yyyy-MM-dd HH:mm:ss");
+  // 今日任務
+  rSheet.appendRow([tenantId, "REC-TODAY-1", timeNowStr, "作業", "國語第 1 課生字語詞", todayDate, "系統預設"]);
+  rSheet.appendRow([tenantId, "REC-TODAY-2", timeNowStr, "考試", "數學 1-1 小考", todayDate, "系統預設"]);
+  // 明日提醒
+  rSheet.appendRow([tenantId, "REC-TOMO-1", timeNowStr, "作業", "數學習作第 6-7 頁", tomorrowDate, "系統預設"]);
+  rSheet.appendRow([tenantId, "REC-TOMO-2", timeNowStr, "提醒事項", "帶彩色筆、美勞剪刀", tomorrowDate, "系統預設"]);
+
+  // 3. 播種缺交作業
+  const mSheet = ss.getSheetByName("Missing_Items");
+  mSheet.appendRow([tenantId, "MIS-INIT-1", todayDate, "1", "數學習作第 5 頁", "未繳", ""]);
+  mSheet.appendRow([tenantId, "MIS-INIT-2", todayDate, "5", "數學習作第 5 頁", "未繳", ""]);
 }
 
 // =========================================================================
@@ -227,26 +252,30 @@ function doPost(e) {
         className: getClassTitle(tenantId),
         teacherPin: getTeacherPin(tenantId)
       };
-    } else if (action === 'parentLogin') {
-      result = parentLogin(data.seatNo, data.password, tenantId);
-    } else if (action === 'getParentViewData') {
-      result = getParentViewData(data.studentNo, tenantId);
-    } else if (action === 'submitParentReport') {
-      result = submitParentReport(data.seatNo, data.note, data.absent, tenantId);
-    } else if (action === 'clearParentNotification') {
-      result = clearParentNotification(data.seatNo, tenantId);
-    } else if (action === 'deleteParentRecord') {
-      result = deleteParentRecord(data.recordId, tenantId);
-    } else if (action === 'toggleCompleteRecord') {
-      result = toggleCompleteRecord(data.recordId, data.completed, tenantId);
+    } else if (action === 'processAudioInput') {
+      result = processAudioInput(data.base64Audio, data.mimeType, data.todayStr, tenantId);
+    } else if (action === 'processMissingAudio') {
+      result = processMissingAudio(data.base64Audio, data.mimeType, data.todayStr, data.targetItem, tenantId);
+    } else if (action === 'getTomorrowReminders' || action === 'getThisWeekReminders') {
+      result = getThisWeekReminders(data, tenantId);
+    } else if (action === 'getNextWeekReminders') {
+      result = getNextWeekReminders(data, tenantId);
+    } else if (action === 'getUnsettledMissingItems') {
+      result = getUnsettledMissingItems(tenantId);
+    } else if (action === 'markSingleStudentCompleted') {
+      result = markSingleStudentCompleted(data.studentNo, data.itemTitle, tenantId);
+    } else if (action === 'getRecentAssignments') {
+      result = getRecentAssignments(data.todayStr, tenantId);
+    } else if (action === 'validateStudentLogin') {
+      result = validateStudentLogin(data.seatNo, data.pwd, tenantId);
+    } else if (action === 'getStudentMissingItems') {
+      result = getStudentMissingItems(data.studentNo, tenantId);
     } else if (action === 'getTodayTasks' || action === 'getTodayReminders') {
       result = getTodayTasks(data, tenantId);
     } else if (action === 'submitMissingText') {
       result = saveNewMissingRecords(data.targetItem, data.studentNos, data.todayStr, "打字輸入", tenantId);
     } else if (action === 'processHandwritingImage') {
       result = processHandwritingImage(data.base64Image, data.todayStr, tenantId);
-    } else if (action === 'getNextWeekReminders') {
-      result = getNextWeekReminders(data, tenantId);
     } else if (action === 'uploadStudentPhoto') {
       result = uploadAndRecognizeStudentPhoto(data, tenantId);
     } else if (action === 'getStudentPhotos') {
@@ -272,7 +301,7 @@ function doPost(e) {
 }
 
 // =========================================================================
-// 🤖 GEMINI 模型探索與 API 調用
+// 🤖 GEMINI 模型探索
 // =========================================================================
 
 function getLatestFlashModelName(customKey) {
@@ -341,67 +370,248 @@ function getTeacherPin(tenantId) {
 function getStudentData(tenantId) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Students');
-  if (!sheet) return [];
+  const className = getClassTitle(tenantId);
+  if (!sheet) return { className: className, students: [] };
+
   const rows = sheet.getDataRange().getValues();
+  const photoMap = getStudentPhotoMap(ss, tenantId);
   const students = [];
 
   for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]).trim() === tenantId) {
+    if (String(rows[i][0]).trim() === tenantId && rows[i][1] !== '') {
+      const seatNo = String(rows[i][1]).trim();
       students.push({
-        id: rows[i][1],
-        name: rows[i][2],
-        password: rows[i][3],
-        missing: rows[i][4] || '',
-        photoUrl: rows[i][5] || ''
+        id: seatNo,
+        name: String(rows[i][2] || '').trim(),
+        password: String(rows[i][3] || '1234').trim(),
+        missing: String(rows[i][4] || '').trim(),
+        photoUrl: photoMap[seatNo] || String(rows[i][5] || '').trim()
       });
     }
   }
-  return students;
+  return { className: className, students: students };
 }
 
-function getTodayTasks(data, tenantId) {
-  const targetDate = data.todayStr || todayDate;
+function getTodayTasks(payload, tenantId) {
+  let targetDateStr = "";
+  if (typeof payload === 'object' && payload !== null) {
+    targetDateStr = payload.todayStr || payload.targetDateStr || "";
+  } else {
+    targetDateStr = String(payload || "");
+  }
+  targetDateStr = normalizeDateStr(targetDateStr);
+
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const recSheet = ss.getSheetByName("All_Records");
-  const misSheet = ss.getSheetByName("Missing_Items");
+  const sheet = ss.getSheetByName("All_Records");
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  const tasks = [];
 
-  const regular = [];
-  if (recSheet && recSheet.getLastRow() > 1) {
-    const rData = recSheet.getDataRange().getValues();
-    for (let i = 1; i < rData.length; i++) {
-      if (String(rData[i][0]).trim() !== tenantId) continue;
-      let exDate = rData[i][5];
-      if (exDate instanceof Date) exDate = Utilities.formatDate(exDate, "GMT+8", "yyyy-MM-dd");
-      else exDate = String(exDate).trim();
-      if (exDate === targetDate) {
-        regular.push({
-          id: rData[i][1],
-          type: rData[i][3],
-          content: rData[i][4],
-          executionDate: exDate
-        });
-      }
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() !== tenantId) continue;
+    let rowDate = normalizeDateStr(data[i][5]);
+    if (rowDate === targetDateStr && rowDate !== "") {
+      tasks.push({
+        type: data[i][3] || "任務",
+        range: data[i][4] || "",
+        date: rowDate,
+        source: data[i][6] || ""
+      });
+    }
+  }
+  return tasks;
+}
+
+function getThisWeekReminders(payload, tenantId) {
+  const tomorrowStr = normalizeDateStr(payload.tomorrowStr);
+  const saturdayStr = normalizeDateStr(payload.saturdayStr);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("All_Records");
+  if (!sheet) return [];
+
+  const data = sheet.getDataRange().getValues();
+  const list = [];
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() !== tenantId) continue;
+    let exDate = normalizeDateStr(data[i][5]);
+    if (exDate && exDate >= tomorrowStr && exDate <= saturdayStr) {
+      list.push({
+        id: data[i][1],
+        type: data[i][3],
+        range: data[i][4],
+        date: exDate,
+        source: data[i][6]
+      });
+    }
+  }
+  return list;
+}
+
+function getNextWeekReminders(payload, tenantId) {
+  const startDateStr = normalizeDateStr(payload.startDateStr);
+  const endDateStr = normalizeDateStr(payload.endDateStr);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("All_Records");
+  if (!sheet) return [];
+
+  const data = sheet.getDataRange().getValues();
+  const list = [];
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() !== tenantId) continue;
+    let exDate = normalizeDateStr(data[i][5]);
+    if (exDate && exDate >= startDateStr && exDate <= endDateStr) {
+      list.push({
+        id: data[i][1],
+        type: data[i][3],
+        range: data[i][4],
+        date: exDate,
+        source: data[i][6]
+      });
+    }
+  }
+  return list;
+}
+
+function getUnsettledMissingItems(tenantId) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Missing_Items");
+  const grouped = {};
+  if (!sheet) return grouped;
+
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() !== tenantId) continue;
+    const status = String(data[i][5]).trim();
+    if (status === "未繳") {
+      const itemTitle = String(data[i][4]).trim();
+      const studentNo = String(data[i][3]).padStart(2, '0');
+      if (!grouped[itemTitle]) grouped[itemTitle] = [];
+      if (!grouped[itemTitle].includes(studentNo)) grouped[itemTitle].push(studentNo);
     }
   }
 
-  const missing = [];
-  if (misSheet && misSheet.getLastRow() > 1) {
-    const mData = misSheet.getDataRange().getValues();
-    for (let i = 1; i < mData.length; i++) {
-      if (String(mData[i][0]).trim() !== tenantId) continue;
-      if (String(mData[i][5]).trim() === "未繳") {
-        missing.push({
-          id: mData[i][1],
-          date: mData[i][2],
-          seatNo: mData[i][3],
-          targetItem: mData[i][4],
-          status: mData[i][5]
-        });
-      }
+  // 排序座號
+  for (let k in grouped) {
+    grouped[k].sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+  }
+  return grouped;
+}
+
+function markSingleStudentCompleted(studentNo, itemTitle, tenantId) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Missing_Items");
+  if (!sheet) return { success: false, error: "查無 Missing_Items" };
+
+  const data = sheet.getDataRange().getValues();
+  const targetNo = String(studentNo).replace(/^0+/, "");
+  const targetItem = String(itemTitle).trim();
+  const nowStr = Utilities.formatDate(new Date(), "GMT+8", "yyyy-MM-dd HH:mm:ss");
+  let clearedCount = 0;
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() !== tenantId) continue;
+    const rowNo = String(data[i][3]).replace(/^0+/, "");
+    const rowItem = String(data[i][4]).trim();
+    const rowStatus = String(data[i][5]).trim();
+
+    if (rowNo === targetNo && rowItem === targetItem && rowStatus === "未繳") {
+      sheet.getRange(i + 1, 6).setValue("已完成");
+      sheet.getRange(i + 1, 7).setValue(nowStr);
+      clearedCount++;
+    }
+  }
+  updateStudentsMissingSummary(ss, tenantId);
+  return { success: true, count: clearedCount };
+}
+
+function updateStudentsMissingSummary(ss, tenantId) {
+  const sSheet = ss.getSheetByName("Students");
+  const mSheet = ss.getSheetByName("Missing_Items");
+  if (!sSheet || !mSheet) return;
+
+  const mData = mSheet.getDataRange().getValues();
+  const pendingByStudent = {};
+
+  for (let i = 1; i < mData.length; i++) {
+    if (String(mData[i][0]).trim() !== tenantId) continue;
+    if (String(mData[i][5]).trim() === "未繳") {
+      const seatNo = String(mData[i][3]).padStart(2, '0');
+      const item = String(mData[i][4]).trim();
+      if (!pendingByStudent[seatNo]) pendingByStudent[seatNo] = [];
+      if (!pendingByStudent[seatNo].includes(item)) pendingByStudent[seatNo].push(item);
     }
   }
 
-  return { success: true, regular: regular, missing: missing };
+  const sData = sSheet.getDataRange().getValues();
+  for (let i = 1; i < sData.length; i++) {
+    if (String(sData[i][0]).trim() !== tenantId) continue;
+    const seatNo = String(sData[i][1]).padStart(2, '0');
+    const itemsList = pendingByStudent[seatNo] ? pendingByStudent[seatNo].join(", ") : "";
+    sSheet.getRange(i + 1, 5).setValue(itemsList);
+  }
+}
+
+function getRecentAssignments(todayDateStr, tenantId) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const rSheet = ss.getSheetByName("All_Records");
+  const assignments = [];
+  if (!rSheet) return assignments;
+
+  const data = rSheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() !== tenantId) continue;
+    const type = String(data[i][3]).trim();
+    const content = String(data[i][4]).trim();
+    if (type === "作業" && content && !assignments.includes(content)) {
+      assignments.push(content);
+    }
+  }
+  return assignments;
+}
+
+function validateStudentLogin(seatNo, pwd, tenantId) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Students");
+  if (!sheet) return { success: false, message: "查無名冊！" };
+
+  const data = sheet.getDataRange().getValues();
+  const targetSeat = String(seatNo).trim();
+  const targetPwd = String(pwd).trim();
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() !== tenantId) continue;
+    if (String(data[i][1]).trim() === targetSeat) {
+      const realPwd = String(data[i][3]).trim();
+      if (realPwd === targetPwd || realPwd === "") {
+        return { success: true, studentName: String(data[i][2]).trim() };
+      } else {
+        return { success: false, message: "密碼錯誤！", error: "密碼錯誤！" };
+      }
+    }
+  }
+  return { success: false, message: "查無此座號！", error: "查無此座號！" };
+}
+
+function getStudentMissingItems(studentNo, tenantId) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Missing_Items");
+  const result = [];
+  if (!sheet) return result;
+
+  const data = sheet.getDataRange().getValues();
+  const targetNo = String(studentNo).trim().padStart(2, '0');
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() !== tenantId) continue;
+    const rowNo = String(data[i][3]).trim().padStart(2, '0');
+    const status = String(data[i][5]).trim();
+    if (rowNo === targetNo && status === "未繳") {
+      result.push(`${data[i][4]} (${normalizeDateStr(data[i][2])})`);
+    }
+  }
+  return result;
 }
 
 function saveRegularRecords(items, tenantId) {
@@ -420,7 +630,7 @@ function saveRegularRecords(items, tenantId) {
       Utilities.formatDate(nowTime, "GMT+8", "yyyy-MM-dd HH:mm:ss"),
       item.type,
       item.range || item.content,
-      item.executionDate,
+      normalizeDateStr(item.executionDate),
       "Demo 語音/手寫"
     ]);
     addedCount++;
@@ -435,18 +645,20 @@ function saveNewMissingRecords(targetItem, studentNos, todayDateStr, source, ten
 
   let added = 0;
   studentNos.forEach(seatNo => {
+    const cleanNo = String(seatNo).trim().padStart(2, '0');
     const newId = "MIS-" + Utilities.formatDate(new Date(), "GMT+8", "yyyyMMddHHmmss") + "-" + Math.floor(Math.random() * 1000);
     sheet.appendRow([
       tenantId,
       newId,
-      todayDateStr,
-      String(seatNo).trim(),
+      normalizeDateStr(todayDateStr),
+      cleanNo,
       targetItem,
       "未繳",
       ""
     ]);
     added++;
   });
+  updateStudentsMissingSummary(ss, tenantId);
   return { success: true, count: added };
 }
 
@@ -495,18 +707,81 @@ function processHandwritingImage(base64Image, todayDateStr, tenantId) {
   }
 }
 
+function processAudioInput(base64Audio, mimeType, todayDateStr, tenantId) {
+  const pureBase64 = base64Audio.includes(',') ? base64Audio.split(',')[1] : base64Audio;
+  let cleanMime = mimeType ? mimeType.split(';')[0].trim() : 'audio/mp4';
+  if (cleanMime === 'audio/m4a') cleanMime = 'audio/mp4';
+
+  const prompt = `今天日期是 ${todayDateStr}，預設隔日日期為 ${tomorrowDate}。
+請聽取語音內容並提取提醒事項，輸出 JSON 陣列：
+[{"type":"考試","range":"數學 3-3","executionDate":"${tomorrowDate}"}]`;
+
+  const payload = {
+    "contents": [{
+      "parts": [
+        { "text": prompt },
+        { "inline_data": { "mime_type": cleanMime, "data": pureBase64 } }
+      ]
+    }]
+  };
+
+  const apiKey = getGeminiApiKey();
+  const modelName = getLatestFlashModelName(apiKey);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+  try {
+    const response = UrlFetchApp.fetch(url, { "method": "post", "contentType": "application/json", "payload": JSON.stringify(payload), "muteHttpExceptions": true });
+    let rawText = JSON.parse(response.getContentText()).candidates[0].content.parts[0].text.trim().replace(/```json/g, "").replace(/```/g, "").trim();
+    const parsedData = JSON.parse(rawText);
+    const addedCount = saveRegularRecords(parsedData, tenantId);
+    return { success: true, added: addedCount };
+  } catch (error) {
+    return { success: false, error: error.toString() };
+  }
+}
+
+function processMissingAudio(base64Audio, mimeType, todayDateStr, targetItem, tenantId) {
+  const pureBase64 = base64Audio.includes(',') ? base64Audio.split(',')[1] : base64Audio;
+  let cleanMime = mimeType ? mimeType.split(';')[0].trim() : 'audio/mp4';
+  if (cleanMime === 'audio/m4a') cleanMime = 'audio/mp4';
+
+  const prompt = `聽取語音中缺交學生的座號數字，回傳純整數數字陣列：["1","5","12"]`;
+  const payload = {
+    "contents": [{
+      "parts": [
+        { "text": prompt },
+        { "inline_data": { "mime_type": cleanMime, "data": pureBase64 } }
+      ]
+    }]
+  };
+
+  const apiKey = getGeminiApiKey();
+  const modelName = getLatestFlashModelName(apiKey);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+  try {
+    const response = UrlFetchApp.fetch(url, { "method": "post", "contentType": "application/json", "payload": JSON.stringify(payload), "muteHttpExceptions": true });
+    let rawText = JSON.parse(response.getContentText()).candidates[0].content.parts[0].text.trim().replace(/```json/g, "").replace(/```/g, "").trim();
+    const studentNos = JSON.parse(rawText);
+    const res = saveNewMissingRecords(targetItem, studentNos, todayDateStr, "Demo 語音", tenantId);
+    return { success: true, added: res.count };
+  } catch (error) {
+    return { success: false, error: error.toString() };
+  }
+}
+
 function loadSeatingState(tenantId) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Seating_State");
-  if (!sheet || sheet.getLastRow() <= 1) return null;
-  const data = sheet.getDataRange().getValues();
+  const tSheet = ss.getSheetByName("Demo_Tenants");
+  if (!tSheet) return null;
+  const data = tSheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() === tenantId) {
-      try {
-        return JSON.parse(data[i][1]);
-      } catch (e) {
-        return null;
+      const jsonStr = data[i][5];
+      if (jsonStr) {
+        try { return JSON.parse(jsonStr); } catch (e) {}
       }
+      break;
     }
   }
   return null;
@@ -514,29 +789,25 @@ function loadSeatingState(tenantId) {
 
 function saveSeatingState(state, tenantId) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Seating_State");
-  if (!sheet) return { success: false, error: "查無 Seating_State 分頁" };
+  const tSheet = ss.getSheetByName("Demo_Tenants");
+  if (!tSheet) return { success: false, error: "查無 Demo_Tenants" };
 
-  const data = sheet.getDataRange().getValues();
+  const data = tSheet.getDataRange().getValues();
   const jsonStr = JSON.stringify(state);
-  const nowStr = Utilities.formatDate(new Date(), "GMT+8", "yyyy-MM-dd HH:mm:ss");
 
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() === tenantId) {
-      sheet.getRange(i + 1, 2, 1, 2).setValues([[jsonStr, nowStr]]);
+      tSheet.getRange(i + 1, 6).setValue(jsonStr);
       return { success: true };
     }
   }
-
-  sheet.appendRow([tenantId, jsonStr, nowStr]);
-  return { success: true };
+  return { success: false, error: "查無此租戶" };
 }
 
-function getStudentPhotos(tenantId) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Seating_Photos");
+function getStudentPhotoMap(ss, tenantId) {
   const map = {};
-  if (!sheet || sheet.getLastRow() <= 1) return { success: true, photos: map };
+  const sheet = ss.getSheetByName("Seating_Photos");
+  if (!sheet || sheet.getLastRow() <= 1) return map;
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() === tenantId) {
@@ -545,7 +816,12 @@ function getStudentPhotos(tenantId) {
       if (seatNo && url) map[seatNo] = url;
     }
   }
-  return { success: true, photos: map };
+  return map;
+}
+
+function getStudentPhotos(tenantId) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  return { success: true, photos: getStudentPhotoMap(ss, tenantId) };
 }
 
 function uploadAndRecognizeStudentPhoto(data, tenantId) {
@@ -603,58 +879,27 @@ function uploadAndRecognizeStudentPhoto(data, tenantId) {
   }
 }
 
-function parentLogin(seatNo, password, tenantId) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Students");
-  if (!sheet) return { success: false, error: "查無名冊" };
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === tenantId && String(data[i][1]).trim() === String(seatNo).trim()) {
-      if (String(data[i][3]).trim() === String(password).trim()) {
-        return { success: true, studentName: data[i][2], seatNo: seatNo };
-      } else {
-        return { success: false, error: "密碼錯誤！" };
-      }
-    }
+function exportSeatingToSheet(exportData, tenantId) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetName = `${tenantId}_座位表`;
+    let sheet = ss.getSheetByName(sheetName);
+    if (sheet) ss.deleteSheet(sheet);
+    sheet = ss.insertSheet(sheetName);
+
+    sheet.getRange(1, 1).setValue(`${getClassTitle(tenantId)} - 座位表 (導出時間: ${todayDate})`)
+         .setFontWeight("bold").setFontSize(14);
+    
+    return { success: true, sheetName: sheetName };
+  } catch (e) {
+    return { success: false, error: e.toString() };
   }
-  return { success: false, error: "查無此座號！" };
-}
-
-function getParentViewData(studentNo, tenantId) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const mSheet = ss.getSheetByName("Missing_Items");
-  const rSheet = ss.getSheetByName("All_Records");
-
-  const missingList = [];
-  if (mSheet) {
-    const mData = mSheet.getDataRange().getValues();
-    for (let i = 1; i < mData.length; i++) {
-      if (String(mData[i][0]).trim() === tenantId && String(mData[i][3]).trim() === String(studentNo).trim() && mData[i][5] === "未繳") {
-        missingList.push({ id: mData[i][1], item: mData[i][4], date: mData[i][2] });
-      }
-    }
-  }
-
-  const tasks = [];
-  if (rSheet) {
-    const rData = rSheet.getDataRange().getValues();
-    for (let i = 1; i < rData.length; i++) {
-      if (String(rData[i][0]).trim() === tenantId) {
-        tasks.push({ id: rData[i][1], type: rData[i][3], content: rData[i][4], executionDate: rData[i][5] });
-      }
-    }
-  }
-
-  return { success: true, missingList: missingList, tasks: tasks };
 }
 
 // =========================================================================
 // ⏰ 7 天自動清理機制 (排程觸發器)
 // =========================================================================
 
-/**
- * 請在 GAS 專案觸發條件中新增：時間驅動 ➔ 每日執行 (例如凌晨 3:00~4:00)
- */
 function autoCleanupExpiredDemoData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const tSheet = ss.getSheetByName("Demo_Tenants");
@@ -667,6 +912,7 @@ function autoCleanupExpiredDemoData() {
 
   for (let i = 1; i < tData.length; i++) {
     const tenantId = String(tData[i][0]).trim();
+    if (tenantId === "demo") continue; // 保護預設 demo 不被清除
     const createdTimeStr = tData[i][1];
     const createdMs = Date.parse(createdTimeStr);
     if (!isNaN(createdMs) && (nowMs - createdMs > expireThresholdMs)) {
@@ -681,7 +927,7 @@ function autoCleanupExpiredDemoData() {
 
   Logger.log(`🧹 開始清理過期租戶: ${Array.from(expiredTenantSet).join(", ")}`);
 
-  const sheetsToClean = ["Students", "All_Records", "Missing_Items", "Seating_Photos", "Seating_State", "Demo_Tenants"];
+  const sheetsToClean = ["Students", "All_Records", "Missing_Items", "Seating_Photos", "Demo_Tenants"];
   sheetsToClean.forEach(sName => {
     const sheet = ss.getSheetByName(sName);
     if (!sheet || sheet.getLastRow() <= 1) return;
