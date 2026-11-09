@@ -18,7 +18,7 @@
 
 > 💡 **開箱即用預設範例**：  
 > 系統預設已自動連接範例後端 GAS 網址：  
-> `https://script.google.com/macros/s/AKfycbw-HyINp8zuGIu5M8Gy88d8T92Yd_WwsKolyA1sVqHZgMNmZSfqSdU8r-8XMSDhjTDzig/exec`  
+> `https://script.google.com/macros/s/AKfycbwMznkA2O1oyBBCi3tPTylTw-H8rUFowLB6-F0IgBsmQnOVMkPDZE1Ixgjd63XfhsTaKQ/exec`  
 > 任何使用者打開網址即可直接操作與體驗班級事務，完全無須繁複的前置綁定！
 
 ---
