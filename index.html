@@ -1971,15 +1971,16 @@ function initGasUrl() {
   GAS_WEB_APP_URL = localStorage.getItem('GAS_WEB_APP_URL') || DEFAULT_GAS_URL;
 }
 
-// 🟢 產生三大端點的帶參數專屬連結
+// 🟢 產生三大端點的帶參數專屬連結 (支援多租戶 Demo 參數自動攜帶)
 function generateShareLinks() {
   const currentOrigin = window.location.origin; // 例如 https://your-app.vercel.app
   const encodedGas = encodeURIComponent(GAS_WEB_APP_URL);
+  const tenantParam = isDemoMode() ? `&tenant=${encodeURIComponent(getDemoTenantId())}` : '';
 
   return {
-    screenLink: `${currentOrigin}/?role=screen&gasUrl=${encodedGas}`,
-    teacherLink: `${currentOrigin}/?role=teacher&gasUrl=${encodedGas}`,
-    parentLink: `${currentOrigin}/?role=parent&gasUrl=${encodedGas}`
+    screenLink: `${currentOrigin}/?role=screen&gasUrl=${encodedGas}${tenantParam}`,
+    teacherLink: `${currentOrigin}/?role=teacher&gasUrl=${encodedGas}${tenantParam}`,
+    parentLink: `${currentOrigin}/?role=parent&gasUrl=${encodedGas}${tenantParam}`
   };
 }
 
