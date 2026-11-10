@@ -1127,7 +1127,7 @@
               <span class="item-icon">⚙️</span>
               <div class="item-text-group">
                 <span class="item-title">系統與同步設定</span>
-                <span class="item-desc">GAS 網址與大屏連結綁定</span>
+                <span class="item-desc">GAS 網址與跨裝置同步綁定</span>
               </div>
             </div>
           </div>
@@ -1192,8 +1192,8 @@
       </div>
       <!-- 🟢 新增：教師端排座位表卡片 -->
       <div class="mobile-btn-card" style="border-top: 5px solid #6366f1;" onclick="openSystemSettingsModal()">
-        <h3>⚙️ 系統設定與大屏綁定</h3>
-        <p>設定 GAS 網址、推送大屏、複製家長連結</p>
+        <h3>⚙️ 系統設定與跨裝置同步</h3>
+        <p>設定 GAS 網址、推送同步連結、複製家長連結</p>
       </div>
       <div class="mobile-btn-card demo-only" style="border-top: 5px solid #f59e0b; display:none;" onclick="openCopyTemplateModal()">
         <h3>📋 轉為正式版：一鍵複製試算表</h3>
@@ -1739,7 +1739,7 @@
 
       <div style="display:flex; flex-direction:column; gap:10px;">
         <button class="btn-success" style="padding:12px; font-size:1rem;" onclick="pushToBigScreen()">
-          🚀 1. 推送綁定連結至大屏 (Screen Pusher)
+          🚀 1. 推送同步連結至其他裝置 (Screen Pusher)
         </button>
         
         <button class="btn-purple" style="padding:12px; font-size:1rem;" onclick="copyParentLink()">
@@ -1912,10 +1912,11 @@
     }
 
     window.onload = function() {
+      if (typeof initTheme === 'function') initTheme(); // 🟢 優先套用佈景主題與黑板顏色
       initGasUrl();
       updateSystemModeUI(); // 🟢 優先處理 GAS 網址自動匯入與寫入
       pingGAS();
-  initDates();
+      initDates();
 
       // 🟢 檢查是否有指定 page 參數（如 ?page=seating）
   const currentPage = urlParams.get('page');
@@ -1955,11 +1956,23 @@
 function initGasUrl() {
   const currentParams = new URLSearchParams(window.location.search);
   const paramGasUrl = currentParams.get('gasUrl') || currentParams.get('gas');
+  const paramTenant = currentParams.get('tenant') || currentParams.get('tenantId');
+
+  let hasImported = false;
 
   // 若網址帶有 gasUrl 參數，自動存入該裝置的 localStorage
   if (paramGasUrl) {
     localStorage.setItem('GAS_WEB_APP_URL', decodeURIComponent(paramGasUrl));
-    
+    hasImported = true;
+  }
+
+  // 若網址帶有 tenant 參數，自動存入該裝置的 localStorage
+  if (paramTenant) {
+    localStorage.setItem('DEMO_TENANT_ID', paramTenant.trim());
+    hasImported = true;
+  }
+
+  if (paramGasUrl) {
     // 移除網址欄中的 gasUrl / gas 參數，保持網址乾淨
     currentParams.delete('gasUrl');
     currentParams.delete('gas');
@@ -1969,6 +1982,50 @@ function initGasUrl() {
 
   // 讀取當前裝置儲存的 GAS 網址 (若無則自動使用預設範例 GAS 網址)
   GAS_WEB_APP_URL = localStorage.getItem('GAS_WEB_APP_URL') || DEFAULT_GAS_URL;
+
+  // 若有接收到帶參同步設定，跳出醒目提示
+  if (hasImported) {
+    setTimeout(() => {
+      showSyncToast(`✨ 已成功載入同步設定！班級：【${getDemoTenantId()}】`);
+    }, 500);
+  }
+}
+
+// 🟢 輕量同步狀態浮動提示 (Toast)
+function showSyncToast(msg) {
+  let toast = document.getElementById('globalSyncToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'globalSyncToast';
+    toast.style.cssText = `
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(15, 23, 42, 0.95);
+      color: #38bdf8;
+      border: 1.5px solid #0284c7;
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 0 15px rgba(56, 189, 248, 0.3);
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    `;
+    document.body.appendChild(toast);
+  }
+  toast.innerText = msg;
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+  });
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(-20px)';
+  }, 3500);
 }
 
 // 🟢 產生三大端點的帶參數專屬連結 (支援多租戶 Demo 參數自動攜帶)
@@ -1984,7 +2041,7 @@ function generateShareLinks() {
   };
 }
 
-// 🟢 透過 Screen Pusher 將大屏設定連結推送到大屏
+// 🟢 透過 Screen Pusher 將同步設定連結推送到目標裝置
 function pushToBigScreen() {
   if (!GAS_WEB_APP_URL) {
     alert("請先輸入並儲存您的 GAS 網址！");
@@ -1992,12 +2049,12 @@ function pushToBigScreen() {
   }
   const links = generateShareLinks();
   
-  // 自動將「大屏專用帶參連結」複製到剪貼簿
+  // 自動將「跨裝置同步連結」複製到剪貼簿
   navigator.clipboard.writeText(links.screenLink).then(() => {
-    alert("已複製【大屏專用綁定連結】！\n系統即將為您開啟 Screen Pusher，請將剪貼簿內容貼上並傳送至大屏。");
+    alert("已複製【跨裝置同步連結】！\n系統即將為您開啟 Screen Pusher，請將剪貼簿內容貼上並傳送至目標裝置。");
     window.open('https://screen-pusher.vercel.app/screen.html', '_blank');
   }).catch(() => {
-    prompt("請複製以下大屏綁定連結，並貼到 Screen Pusher 傳送至大屏：", links.screenLink);
+    prompt("請複製以下同步連結，並貼到 Screen Pusher 傳送至目標裝置：", links.screenLink);
     window.open('https://screen-pusher.vercel.app/screen.html', '_blank');
   });
 }
@@ -2205,18 +2262,24 @@ function setMode(m) {
   if (eraserBtn) eraserBtn.className = (mode === 'eraser') ? 'btn-primary square-btn' : 'btn-outline square-btn';
 
   if (ctx) {
-    ctx.strokeStyle = (mode === 'pen') ? '#000000' : '#ffffff';
+    const cfg = (typeof THEME_CONFIGS !== 'undefined' && THEME_CONFIGS[currentThemeId]) 
+      ? THEME_CONFIGS[currentThemeId] 
+      : { penColor: '#000000', eraserColor: '#ffffff' };
+    ctx.strokeStyle = (mode === 'pen') ? cfg.penColor : cfg.eraserColor;
     ctx.lineWidth = (mode === 'pen') ? 4 : 30;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
   }
 }
 
-  // 清除畫布並重置白底
+  // 清除畫布並重置為當前主題之背景色 (修復黑板模式被清除變白底之問題)
 function clearCanvas() { 
   if (!ctx || !canvas) return;
+  const cfg = (typeof THEME_CONFIGS !== 'undefined' && THEME_CONFIGS[currentThemeId]) 
+    ? THEME_CONFIGS[currentThemeId] 
+    : { canvasBg: '#ffffff' };
   const dpr = window.devicePixelRatio || 1;
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = cfg.canvasBg;
   ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 }
 
@@ -3015,17 +3078,24 @@ function initDragMenus() {
       // 點擊或長按時喚醒音訊環境
       getAudioContext();
 
+      // 若該選單原本已開啟，點擊同一個按鍵則切換為關閉收合
+      const wasOpen = (currentActiveDragMenu === menu);
+      if (wasOpen) {
+        closeAllDragMenus();
+        e.stopPropagation();
+        return;
+      }
+
+      if (currentActiveDragMenu) {
+        closeAllDragMenus();
+      }
+
       isPointerActive = true;
       pointerDownStartX = e.clientX;
       pointerDownStartY = e.clientY;
       pointerDownTimestamp = Date.now();
       isDragMoveThresholdPassed = false;
       currentHoveredMenuItem = null;
-
-      // 若該選單未開，立即開啟；若另一個選單開著則關閉另一個
-      if (currentActiveDragMenu && currentActiveDragMenu !== menu) {
-        closeAllDragMenus();
-      }
 
       openDragMenu(menu, btn);
       currentActiveDragMenu = menu;
@@ -3061,8 +3131,13 @@ function openDragMenu(menu, btn) {
 
 function closeAllDragMenus() {
   document.querySelectorAll('.drag-menu').forEach(m => m.classList.remove('is-active'));
-  document.querySelectorAll('.master-btn').forEach(b => b.classList.remove('menu-open', 'btn-pressed'));
-  document.querySelectorAll('.drag-menu-item').forEach(i => i.classList.remove('active-drag-target'));
+  document.querySelectorAll('.master-btn').forEach(b => {
+    b.classList.remove('menu-open', 'btn-pressed');
+    b.blur();
+  });
+  document.querySelectorAll('.drag-menu-item').forEach(i => {
+    i.classList.remove('active-drag-target', 'item-selected');
+  });
   currentActiveDragMenu = null;
   currentHoveredMenuItem = null;
   window.removeEventListener('pointermove', onGlobalPointerMove);
