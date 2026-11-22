@@ -1029,6 +1029,10 @@
     <div class="header-title" id="pageTitle">智慧教室管理系統</div>
     <div class="date-display" id="todayDateStr">載入中...</div>
     <div class="header-action-group" id="headerBtns">
+      <!-- 🔑 班級代碼連線與狀態按鈕 (點擊可輸入 6 碼或註冊新班級) -->
+      <button id="btnClassCodeBadge" class="master-btn" style="background:#0284c7; border:1px solid #0369a1; color:#ffffff; font-weight:bold; padding:8px 16px; border-radius:12px; cursor:pointer;" onclick="openClassCodeModal()" title="輸入 6 碼代碼連線或註冊新班級">
+        <span>🔑</span><span id="headerClassCodeText">班級代碼連線</span>
+      </button>
       <!-- 🌟 一鍵建立專屬試算表按鈕 (僅在 Demo 試用模式顯示，正式版自動隱藏) -->
       <button id="btnCopyTemplate" class="master-btn demo-only" style="background:#f59e0b; border:1px solid #d97706; color:#ffffff; font-weight:bold; display:none; padding:8px 16px; border-radius:12px; cursor:pointer;" onclick="openCopyTemplateModal()">
         <span>📋</span><span>一鍵建立專屬試算表</span>
@@ -1191,6 +1195,10 @@
         <p>預覽明日與下週之班級提醒事項</p>
       </div>
       <!-- 🟢 新增：教師端排座位表卡片 -->
+      <div class="mobile-btn-card" style="border-top: 5px solid #0284c7;" onclick="openClassCodeModal()">
+        <h3>🔑 班級 6 碼代碼連線與註冊</h3>
+        <p>目前代碼：<strong id="teacherClassCodeDisplay" style="color:#0284c7;">尚未綁定</strong>（點擊連線/取得代碼）</p>
+      </div>
       <div class="mobile-btn-card" style="border-top: 5px solid #6366f1;" onclick="openSystemSettingsModal()">
         <h3>⚙️ 系統設定與跨裝置同步</h3>
         <p>設定 GAS 網址、推送同步連結、複製家長連結</p>
@@ -1696,18 +1704,127 @@
     </div>
   </div>
 
+  <!-- 🔑 6 碼班級代碼快速連線與註冊 Modal -->
+  <div id="classCodeModal" class="modal-backdrop">
+    <div class="modal-box" style="max-width: 490px; text-align: left; padding: 24px;">
+      <div style="text-align: center; margin-bottom: 12px;">
+        <span style="font-size: 2.2rem;">🏫</span>
+        <h3 style="margin-top: 4px; color: #1e293b; font-size: 1.35rem; font-weight: 800;">
+          班級代碼連線中心
+        </h3>
+        <p style="font-size: 0.83rem; color: #64748b; margin-top: 4px;">
+          透過 6 碼代碼，大屏、手機與家長端「查詢一次，終身直連」
+        </p>
+      </div>
+
+      <!-- Tab 選籤切換 -->
+      <div style="display: flex; gap: 8px; margin-bottom: 18px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+        <button id="tabBtnConnect" class="btn-primary" style="flex: 1; padding: 10px; font-size: 0.92rem; font-weight: bold; border-radius: 8px;" onclick="switchClassCodeTab('connect')">
+          🔑 1. 輸入 6 碼連線
+        </button>
+        <button id="tabBtnRegister" class="btn-outline" style="flex: 1; padding: 10px; font-size: 0.92rem; font-weight: bold; color: #475569; border-radius: 8px;" onclick="switchClassCodeTab('register')">
+          🚀 2. 註冊新班級
+        </button>
+      </div>
+
+      <!-- Tab 1: 輸入代碼連線 (大屏、手機端與其他裝置常用) -->
+      <div id="tabContentConnect">
+        <div style="margin-bottom: 16px;">
+          <label style="font-weight: bold; display: block; margin-bottom: 8px; font-size: 0.9rem; color: #334155;">
+            請輸入 6 碼英數班級代碼：
+          </label>
+          <input type="text" id="inputClassCode" maxlength="6" placeholder="例如：K8M3P9" 
+                 style="width: 100%; text-align: center; font-size: 1.9rem; font-weight: 900; letter-spacing: 6px; text-transform: uppercase; padding: 12px; border: 2.5px solid #0284c7; border-radius: 12px; font-family: monospace; outline: none; background: #f0f9ff; color: #0369a1;"
+                 oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')"
+                 onkeydown="if(event.key === 'Enter') handleConnectByCode();">
+          <p style="font-size: 0.78rem; color: #64748b; margin-top: 8px; line-height: 1.4;">
+            💡 <strong>免打長串網址</strong>：只要輸入老師提供的 6 碼代碼，系統將透過中央名錄自動綁定並直連，完全不經手任何學生隱私個資。
+          </p>
+        </div>
+
+        <button class="btn-primary" style="width: 100%; padding: 12px; font-size: 1.05rem; font-weight: bold; border-radius: 10px; margin-bottom: 12px; background: #0284c7; border-color: #0369a1;" onclick="handleConnectByCode()">
+          🚀 連線進入班級
+        </button>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 0.82rem; padding-top: 8px; border-top: 1px dashed #e2e8f0;">
+          <button class="btn-outline" style="padding: 6px 12px; font-size: 0.8rem; color: #f59e0b; border-color: #f59e0b;" onclick="useDefaultDemoFromModal()">
+            🌱 體驗公共 Demo
+          </button>
+          <span style="color: #64748b; cursor: pointer; text-decoration: underline;" onclick="switchClassCodeTab('register')">
+            首次使用？點此註冊領取代碼 ➔
+          </span>
+        </div>
+      </div>
+
+      <!-- Tab 2: 註冊新班級 (老師首次啟用) -->
+      <div id="tabContentRegister" style="display: none;">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-bottom: 15px; font-size: 0.82rem; color: #475569; line-height: 1.5;">
+          <strong>💡 老師如何取得專屬 6 碼代碼？</strong><br>
+          1. 複製您的試算表範本並於 Apps Script 完成部署。<br>
+          2. 將結尾為 <code>/exec</code> 的個人網頁應用程式網址貼入下方。<br>
+          3. 系統將為您核發一組專屬 6 碼代碼，未來在教室大屏或發給家長只需此 6 碼！
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="font-weight: bold; display: block; margin-bottom: 6px; font-size: 0.88rem; color: #334155;">
+            貼上您的 Google Apps Script (GAS) 部署網址：
+          </label>
+          <input type="url" id="inputRegisterGasUrl" placeholder="https://script.google.com/macros/s/.../exec" 
+                 style="width: 100%; padding: 10px; border-radius: 8px; border: 1.5px solid #cbd5e1; font-size: 0.85rem; font-family: monospace;">
+        </div>
+
+        <button class="btn-success" style="width: 100%; padding: 12px; font-size: 1.05rem; font-weight: bold; border-radius: 10px;" onclick="handleRegisterClass()">
+          ✨ 註冊並核發專屬 6 碼代碼
+        </button>
+
+        <div id="registerSuccessBox" style="display: none; margin-top: 15px; background: #ecfdf5; border: 2px solid #10b981; border-radius: 12px; padding: 14px; text-align: center;">
+          <div style="font-size: 0.95rem; font-weight: bold; color: #065f46; margin-bottom: 6px;">🎉 註冊成功！您的專屬班級代碼為：</div>
+          <div id="registeredCodeDisplay" style="font-size: 2.2rem; font-weight: 900; color: #047857; letter-spacing: 6px; font-family: monospace; margin: 8px 0;"></div>
+          <div style="font-size: 0.82rem; color: #047857; line-height: 1.5;">
+            已為本裝置完成綁定！您可在教室大屏直接輸入此 6 碼，或發送家長專屬短連結。
+          </div>
+          <button class="btn-primary" style="margin-top: 10px; width: 100%; padding: 8px;" onclick="closeClassCodeModal(); window.location.reload();">
+            進入我的班級系統
+          </button>
+        </div>
+      </div>
+
+      <div style="text-align: right; margin-top: 16px;">
+        <button class="btn-outline" style="padding: 6px 16px; color: #64748b; border: 1px solid #cbd5e1;" onclick="closeClassCodeModal()">
+          關閉
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- 系統設定與同步 Modal -->
   <div id="systemSettingsModal" class="modal-backdrop">
     <div class="modal-box" style="max-width: 500px;">
-      <h3 style="margin-bottom:15px; text-align:center;">⚙️ 系統 API 與大屏綁定設定</h3>
+      <h3 style="margin-bottom:15px; text-align:center;">⚙️ 系統 API 與裝置同步設定</h3>
       
+      <!-- 🔑 班級 6 碼專屬代碼卡片 -->
+      <div style="background: #f0f9ff; border: 1.5px solid #0284c7; border-radius: 12px; padding: 14px; margin-bottom: 15px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: bold; color: #0369a1; font-size: 0.95rem;">🔑 班級 6 碼連線代碼：</span>
+          <button class="btn-primary" style="padding: 4px 10px; font-size: 0.8rem; background: #0284c7;" onclick="closeSystemSettingsModal(); openClassCodeModal();">
+            更換/領取代碼
+          </button>
+        </div>
+        <div style="font-size: 1.6rem; font-weight: 900; color: #0284c7; font-family: monospace; letter-spacing: 4px; margin: 6px 0;" id="settingClassCodeDisplay">
+          尚未設定 6 碼代碼
+        </div>
+        <div style="font-size: 0.78rem; color: #64748b;">
+          💡 大屏端或家長端只需輸入此代碼，即可快速直連，免輸入長串網址！
+        </div>
+      </div>
+
       <!-- 狀態卡片 (自動區分 Demo試用 / 正式版) -->
       <div id="systemModeStatusCard" style="margin-bottom:15px; padding:12px; border-radius:10px; font-size:0.88rem; line-height:1.5;"></div>
       
       <div style="margin-bottom:15px;">
         <label style="font-weight:bold; display:block; margin-bottom:5px;">Google Apps Script (GAS) 部署網址：</label>
         <input type="text" id="settingGasUrlInput" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; font-size:0.9rem;">
-        <button class="btn-primary" style="width:100%; margin-top:8px; padding:8px;" onclick="saveGasUrlSetting()">💾 儲存 GAS 網址</button>
+        <button class="btn-primary" style="width:100%; margin-top:8px; padding:8px;" onclick="saveGasUrlSetting()">💾 儲存自訂 GAS 網址</button>
         <button class="btn-outline" style="width:100%; margin-top:6px; padding:6px; font-size:0.85rem; color:#475569;" onclick="resetDefaultGasUrl()">🔄 恢復預設範例 GAS 網址</button>
       </div>
 
@@ -1753,6 +1870,8 @@
 
   <script>
     const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwMznkA2O1oyBBCi3tPTylTw-H8rUFowLB6-F0IgBsmQnOVMkPDZE1Ixgjd63XfhsTaKQ/exec";
+    // 📖 中央名錄 GAS 網址 (開發者部署 Code_CentralDirectory.gs 後填入此處，專門負責 6 碼代碼發放與電話簿查詢)
+    const CENTRAL_DIRECTORY_GAS_URL = "https://script.google.com/macros/s/AKfycbz_CENTRAL_DIRECTORY_GAS_URL/exec";
     let GAS_WEB_APP_URL = DEFAULT_GAS_URL;
     const urlParams = new URLSearchParams(window.location.search);
     const userRole = urlParams.get('role') || 'screen';
@@ -1911,165 +2030,381 @@
       }
     }
 
-    window.onload = function() {
+    window.onload = async function() {
       if (typeof initTheme === 'function') initTheme(); // 🟢 優先套用佈景主題與黑板顏色
-      initGasUrl();
+      await initGasUrl();
       updateSystemModeUI(); // 🟢 優先處理 GAS 網址自動匯入與寫入
+      updateClassCodeUI();  // 🟢 更新 6 碼班級代碼徽章與狀態
       pingGAS();
       initDates();
 
       // 🟢 檢查是否有指定 page 參數（如 ?page=seating）
-  const currentPage = urlParams.get('page');
-  if (currentPage === 'seating') {
-    // 若座位頁面為獨立的 html 檔案，可直接跳轉：
-    // window.location.href = 'seating.html';
-    // 或者切換為座位表模式...
-    return;
-  }
-  const validRoles = ['screen', 'teacher', 'parent'];
-  const currentRole = userRole.toLowerCase().trim();
+      const currentPage = urlParams.get('page');
+      if (currentPage === 'seating') {
+        return;
+      }
+      const validRoles = ['screen', 'teacher', 'parent'];
+      const currentRole = userRole.toLowerCase().trim();
 
-  if (!validRoles.includes(currentRole)) {
-    alert("⚠️ 網址參數無效，已自動重定向至家長查詢頁面。");
-    setupParentView();
-    return;
-  }
+      if (!validRoles.includes(currentRole)) {
+        alert("⚠️ 網址參數無效，已自動重定向至家長查詢頁面。");
+        setupParentView();
+        return;
+      }
 
-  if (currentRole === 'teacher') {
-    document.getElementById('teacherScreen').style.display = 'flex';
-    document.getElementById('headerBtns').style.display = 'none';
-    updateDynamicTitles('teacher');
-  } else if (currentRole === 'parent') {
-    setupParentView();
-  } else if (currentRole === 'screen') {
-    document.getElementById('mainScreen').style.display = 'flex';
-    document.getElementById('headerBtns').style.display = 'flex';
-    
-    initCanvas(); // ★ 關鍵修復：補上原本遺漏的畫布初始化呼叫
-    updateDynamicTitles('screen');
-    initDragMenus(); // 🟢 初始化大屏頂部長按拖曳與點擊選單
-    loadLotteryStudents(); // 🟢 預載座位表學生名單至抽籤池
-  }
-};
+      if (currentRole === 'teacher') {
+        document.getElementById('teacherScreen').style.display = 'flex';
+        document.getElementById('headerBtns').style.display = 'none';
+        updateDynamicTitles('teacher');
+      } else if (currentRole === 'parent') {
+        setupParentView();
+      } else if (currentRole === 'screen') {
+        document.getElementById('mainScreen').style.display = 'flex';
+        document.getElementById('headerBtns').style.display = 'flex';
+        
+        initCanvas(); // ★ 關鍵修復：補上原本遺漏的畫布初始化呼叫
+        updateDynamicTitles('screen');
+        initDragMenus(); // 🟢 初始化大屏頂部長按拖曳與點擊選單
+        loadLotteryStudents(); // 🟢 預載座位表學生名單至抽籤池
+      }
+    };
 
-// 🟢 網址自動讀取、解析、匯入與清理邏輯
-function initGasUrl() {
-  const currentParams = new URLSearchParams(window.location.search);
-  const paramGasUrl = currentParams.get('gasUrl') || currentParams.get('gas');
-  const paramTenant = currentParams.get('tenant') || currentParams.get('tenantId');
+    // 🟢 網址自動讀取、解析、匯入與清理邏輯 (支援 6 碼代碼自動向中央名錄換取 GAS 網址)
+    async function initGasUrl() {
+      const currentParams = new URLSearchParams(window.location.search);
+      const paramCode = (currentParams.get('code') || currentParams.get('classCode') || '').trim();
+      const paramGasUrl = currentParams.get('gasUrl') || currentParams.get('gas');
+      const paramTenant = currentParams.get('tenant') || currentParams.get('tenantId');
 
-  let hasImported = false;
+      let hasImported = false;
 
-  // 若網址帶有 gasUrl 參數，自動存入該裝置的 localStorage
-  if (paramGasUrl) {
-    localStorage.setItem('GAS_WEB_APP_URL', decodeURIComponent(paramGasUrl));
-    hasImported = true;
-  }
+      // 1. 優先處理 6 碼代碼自動解析 (查詢一次，終身直連)
+      if (paramCode) {
+        const cleanCode = paramCode.toUpperCase();
+        try {
+          const resolvedGas = await lookupClassCode(cleanCode);
+          if (resolvedGas) {
+            localStorage.setItem('GAS_WEB_APP_URL', resolvedGas);
+            localStorage.setItem('CLASS_CODE', cleanCode);
+            GAS_WEB_APP_URL = resolvedGas;
+            hasImported = true;
+            // 移除網址中的 code 參數保持網址乾淨
+            currentParams.delete('code');
+            currentParams.delete('classCode');
+            const newSearch = currentParams.toString() ? '?' + currentParams.toString() : window.location.pathname;
+            window.history.replaceState({}, document.title, newSearch);
+            setTimeout(() => {
+              showSyncToast(`🔑 已成功透過代碼【${cleanCode}】直連專屬班級！`);
+            }, 600);
+            return;
+          } else {
+            console.warn("中央名錄無此代碼:", cleanCode);
+          }
+        } catch (e) {
+          console.warn("代碼解析連線失敗:", e);
+        }
+      }
 
-  // 若網址帶有 tenant 參數，自動存入該裝置的 localStorage
-  if (paramTenant) {
-    localStorage.setItem('DEMO_TENANT_ID', paramTenant.trim());
-    hasImported = true;
-  }
+      // 2. 若網址帶有 gasUrl 參數，自動存入該裝置的 localStorage
+      if (paramGasUrl) {
+        localStorage.setItem('GAS_WEB_APP_URL', decodeURIComponent(paramGasUrl));
+        hasImported = true;
+      }
 
-  if (paramGasUrl) {
-    // 移除網址欄中的 gasUrl / gas 參數，保持網址乾淨
-    currentParams.delete('gasUrl');
-    currentParams.delete('gas');
-    const newSearch = currentParams.toString() ? '?' + currentParams.toString() : window.location.pathname;
-    window.history.replaceState({}, document.title, newSearch);
-  }
+      // 3. 若網址帶有 tenant 參數，自動存入該裝置的 localStorage
+      if (paramTenant) {
+        localStorage.setItem('DEMO_TENANT_ID', paramTenant.trim());
+        hasImported = true;
+      }
 
-  // 讀取當前裝置儲存的 GAS 網址 (若無則自動使用預設範例 GAS 網址)
-  GAS_WEB_APP_URL = localStorage.getItem('GAS_WEB_APP_URL') || DEFAULT_GAS_URL;
+      if (paramGasUrl) {
+        // 移除網址欄中的 gasUrl / gas 參數，保持網址乾淨
+        currentParams.delete('gasUrl');
+        currentParams.delete('gas');
+        const newSearch = currentParams.toString() ? '?' + currentParams.toString() : window.location.pathname;
+        window.history.replaceState({}, document.title, newSearch);
+      }
 
-  // 若有接收到帶參同步設定，跳出醒目提示
-  if (hasImported) {
-    setTimeout(() => {
-      showSyncToast(`✨ 已成功載入同步設定！班級：【${getDemoTenantId()}】`);
-    }, 500);
-  }
-}
+      // 讀取當前裝置儲存的 GAS 網址 (若無則自動使用預設範例 GAS 網址)
+      GAS_WEB_APP_URL = localStorage.getItem('GAS_WEB_APP_URL') || DEFAULT_GAS_URL;
 
-// 🟢 輕量同步狀態浮動提示 (Toast)
-function showSyncToast(msg) {
-  let toast = document.getElementById('globalSyncToast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'globalSyncToast';
-    toast.style.cssText = `
-      position: fixed;
-      top: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-20px);
-      background: rgba(15, 23, 42, 0.95);
-      color: #38bdf8;
-      border: 1.5px solid #0284c7;
-      padding: 12px 24px;
-      border-radius: 999px;
-      font-size: 0.95rem;
-      font-weight: 800;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 0 15px rgba(56, 189, 248, 0.3);
-      z-index: 9999;
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    `;
-    document.body.appendChild(toast);
-  }
-  toast.innerText = msg;
-  requestAnimationFrame(() => {
-    toast.style.opacity = '1';
-    toast.style.transform = 'translateX(-50%) translateY(0)';
-  });
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateX(-50%) translateY(-20px)';
-  }, 3500);
-}
+      // 若有接收到帶參同步設定，跳出醒目提示
+      if (hasImported) {
+        setTimeout(() => {
+          showSyncToast(`✨ 已成功載入同步設定！班級：【${getDemoTenantId()}】`);
+        }, 500);
+      }
+    }
 
-// 🟢 產生三大端點的帶參數專屬連結 (支援多租戶 Demo 參數自動攜帶)
-function generateShareLinks() {
-  const currentOrigin = window.location.origin; // 例如 https://your-app.vercel.app
-  const encodedGas = encodeURIComponent(GAS_WEB_APP_URL);
-  const tenantParam = isDemoMode() ? `&tenant=${encodeURIComponent(getDemoTenantId())}` : '';
+    // =========================================================================
+    // 🔑 中央名錄電話簿 API (班級 6 碼代碼 ➔ GAS 網址互轉)
+    // =========================================================================
+    async function lookupClassCode(code) {
+      if (!code) return null;
+      const cleanCode = code.trim().toUpperCase();
+      try {
+        const url = `${CENTRAL_DIRECTORY_GAS_URL}?action=lookup&code=${encodeURIComponent(cleanCode)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && data.success && data.gasUrl) {
+          return data.gasUrl;
+        }
+        return null;
+      } catch (err) {
+        console.warn("中央名錄查詢失敗:", err);
+        return null;
+      }
+    }
 
-  return {
-    screenLink: `${currentOrigin}/?role=screen&gasUrl=${encodedGas}${tenantParam}`,
-    teacherLink: `${currentOrigin}/?role=teacher&gasUrl=${encodedGas}${tenantParam}`,
-    parentLink: `${currentOrigin}/?role=parent&gasUrl=${encodedGas}${tenantParam}`
-  };
-}
+    async function registerClassGasUrl(gasUrl) {
+      if (!gasUrl) throw new Error("請提供有效的 GAS 網址");
+      try {
+        const res = await fetch(CENTRAL_DIRECTORY_GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'register', gasUrl: gasUrl.trim() })
+        });
+        const data = await res.json();
+        return data;
+      } catch (err) {
+        throw new Error("向中央名錄註冊通訊失敗：" + err.message);
+      }
+    }
 
-// 🟢 透過 Screen Pusher 將同步設定連結推送到目標裝置
-function pushToBigScreen() {
-  if (!GAS_WEB_APP_URL) {
-    alert("請先輸入並儲存您的 GAS 網址！");
-    return;
-  }
-  const links = generateShareLinks();
-  
-  // 自動將「跨裝置同步連結」複製到剪貼簿
-  navigator.clipboard.writeText(links.screenLink).then(() => {
-    alert("已複製【跨裝置同步連結】！\n系統即將為您開啟 Screen Pusher，請將剪貼簿內容貼上並傳送至目標裝置。");
-    window.open('https://screen-pusher.vercel.app/screen.html', '_blank');
-  }).catch(() => {
-    prompt("請複製以下同步連結，並貼到 Screen Pusher 傳送至目標裝置：", links.screenLink);
-    window.open('https://screen-pusher.vercel.app/screen.html', '_blank');
-  });
-}
+    // =========================================================================
+    // 🔑 班級 6 碼代碼視窗互動管理
+    // =========================================================================
+    function openClassCodeModal() {
+      const modal = document.getElementById('classCodeModal');
+      if (modal) modal.style.display = 'flex';
+      const existingCode = localStorage.getItem('CLASS_CODE') || '';
+      const inputCode = document.getElementById('inputClassCode');
+      if (inputCode && existingCode) inputCode.value = existingCode;
+      const inputRegGas = document.getElementById('inputRegisterGasUrl');
+      if (inputRegGas && !isDemoMode() && GAS_WEB_APP_URL) {
+        inputRegGas.value = GAS_WEB_APP_URL;
+      }
+    }
 
-// 🟢 複製家長端連結
-function copyParentLink() {
-  if (!GAS_WEB_APP_URL) {
-    alert("請先輸入並儲存您的 GAS 網址！");
-    return;
-  }
-  const links = generateShareLinks();
-  navigator.clipboard.writeText(links.parentLink).then(() => {
-    alert("已複製【家長端專用連結】！\n您可以直接貼至 LINE 班級群組供家長使用。");
-  });
-}
+    function closeClassCodeModal() {
+      const modal = document.getElementById('classCodeModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function switchClassCodeTab(tab) {
+      const btnConnect = document.getElementById('tabBtnConnect');
+      const btnReg = document.getElementById('tabBtnRegister');
+      const contentConnect = document.getElementById('tabContentConnect');
+      const contentReg = document.getElementById('tabContentRegister');
+
+      if (tab === 'connect') {
+        btnConnect.className = 'btn-primary';
+        btnReg.className = 'btn-outline';
+        contentConnect.style.display = 'block';
+        contentReg.style.display = 'none';
+      } else {
+        btnReg.className = 'btn-primary';
+        btnConnect.className = 'btn-outline';
+        contentConnect.style.display = 'none';
+        contentReg.style.display = 'block';
+      }
+    }
+
+    async function handleConnectByCode() {
+      const input = document.getElementById('inputClassCode');
+      const code = (input ? input.value : '').trim().toUpperCase();
+      if (!code || code.length < 4) {
+        alert("請輸入正確的 6 碼英數班級代碼！");
+        return;
+      }
+
+      showSyncToast(`🔍 正在向中央名錄查詢代碼【${code}】...`);
+
+      const gasUrl = await lookupClassCode(code);
+      if (gasUrl) {
+        localStorage.setItem('GAS_WEB_APP_URL', gasUrl);
+        localStorage.setItem('CLASS_CODE', code);
+        GAS_WEB_APP_URL = gasUrl;
+        alert(`🎉 恭喜！已成功驗證班級代碼【${code}】！\n系統已自動直連至專屬試算表後端，即將進入系統。`);
+        closeClassCodeModal();
+        location.reload();
+      } else {
+        alert(`❌ 查無代碼【${code}】之班級資訊！\n\n可能原因：\n1. 代碼輸入錯誤（請確認大小寫或有無打錯）。\n2. 該班級尚未在系統完成註冊。\n\n如為新班級，請切換至「🚀 2. 註冊新班級」頁籤領取代碼！`);
+      }
+    }
+
+    async function handleRegisterClass() {
+      const input = document.getElementById('inputRegisterGasUrl');
+      const rawUrl = (input ? input.value : '').trim();
+      if (!rawUrl || !rawUrl.startsWith('https://script.google.com/macros/s/')) {
+        alert("請輸入正確且完整的 Google Apps Script (GAS) 部署網址（必須以 https://script.google.com/macros/s/ 開頭並以 /exec 結尾）！");
+        return;
+      }
+
+      showSyncToast("🚀 正在向中央名錄註冊並領取 6 碼代碼...");
+
+      try {
+        const res = await registerClassGasUrl(rawUrl);
+        if (res && res.success && res.code) {
+          const issuedCode = res.code.toUpperCase();
+          localStorage.setItem('GAS_WEB_APP_URL', rawUrl);
+          localStorage.setItem('CLASS_CODE', issuedCode);
+          GAS_WEB_APP_URL = rawUrl;
+
+          const successBox = document.getElementById('registerSuccessBox');
+          const codeDisplay = document.getElementById('registeredCodeDisplay');
+          if (codeDisplay) codeDisplay.innerText = issuedCode;
+          if (successBox) successBox.style.display = 'block';
+
+          updateClassCodeUI();
+          updateSystemModeUI();
+          alert(`🎉 註冊成功！您的專屬 6 碼班級代碼為：【${issuedCode}】！\n已自動為本裝置綁定，教室大屏或發給家長時只需此 6 碼！`);
+        } else {
+          alert("❌ 註冊失敗：" + (res && res.error ? res.error : "未知錯誤，請檢查中央名錄 GAS 部署狀態。"));
+        }
+      } catch (err) {
+        alert("❌ 註冊連線異常：" + err.message);
+      }
+    }
+
+    function useDefaultDemoFromModal() {
+      localStorage.setItem('GAS_WEB_APP_URL', DEFAULT_GAS_URL);
+      localStorage.removeItem('CLASS_CODE');
+      GAS_WEB_APP_URL = DEFAULT_GAS_URL;
+      alert("已切換為公共 Demo 試用模式！");
+      closeClassCodeModal();
+      location.reload();
+    }
+
+    function updateClassCodeUI() {
+      const currentCode = localStorage.getItem('CLASS_CODE') || '';
+      const badgeBtn = document.getElementById('btnClassCodeBadge');
+      if (badgeBtn) {
+        if (currentCode) {
+          badgeBtn.innerHTML = `🔑 班級：<span style="font-family:monospace; letter-spacing:1px; color:#38bdf8;">${currentCode}</span>`;
+          badgeBtn.style.background = '#0369a1';
+        } else {
+          badgeBtn.innerHTML = `🔑 班級 6 碼代碼`;
+          badgeBtn.style.background = '#0284c7';
+        }
+      }
+
+      const settingDisplay = document.getElementById('settingClassCodeDisplay');
+      if (settingDisplay) {
+        if (currentCode) {
+          settingDisplay.innerHTML = `
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span style="letter-spacing:4px; font-weight:900;">${currentCode}</span>
+              <button class="btn-outline" style="font-size:0.75rem; padding:3px 8px; color:#0284c7; border-color:#0284c7;" onclick="navigator.clipboard.writeText('${currentCode}'); alert('已複製代碼：${currentCode}');">複製代碼</button>
+            </div>
+          `;
+        } else {
+          settingDisplay.innerHTML = `<span style="font-size:0.95rem; font-weight:normal; color:#64748b;">尚未綁定代碼（建議至連線中心註冊領取）</span>`;
+        }
+      }
+    }
+
+    // 🟢 輕量同步狀態浮動提示 (Toast)
+    function showSyncToast(msg) {
+      let toast = document.getElementById('globalSyncToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'globalSyncToast';
+        toast.style.cssText = `
+          position: fixed;
+          top: 24px;
+          left: 50%;
+          transform: translateX(-50%) translateY(-20px);
+          background: rgba(15, 23, 42, 0.95);
+          color: #38bdf8;
+          border: 1.5px solid #0284c7;
+          padding: 12px 24px;
+          border-radius: 999px;
+          font-size: 0.95rem;
+          font-weight: 800;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 0 15px rgba(56, 189, 248, 0.3);
+          z-index: 9999;
+          opacity: 0;
+          pointer-events: none;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        `;
+        document.body.appendChild(toast);
+      }
+      toast.innerText = msg;
+      requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+      });
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(-20px)';
+      }, 3500);
+    }
+
+    // 🟢 產生三大端點的專屬連結 (有 6 碼代碼時產生極簡短網址，查詢一次終身直連)
+    function generateShareLinks() {
+      const currentOrigin = window.location.origin; // 例如 https://your-app.vercel.app
+      const currentCode = localStorage.getItem('CLASS_CODE');
+
+      // 若已有 6 碼代碼，產生乾淨極簡的短連結
+      if (currentCode) {
+        return {
+          screenLink: `${currentOrigin}/?role=screen&code=${encodeURIComponent(currentCode)}`,
+          teacherLink: `${currentOrigin}/?role=teacher&code=${encodeURIComponent(currentCode)}`,
+          parentLink: `${currentOrigin}/?role=parent&code=${encodeURIComponent(currentCode)}`
+        };
+      }
+
+      // 若無代碼（如 Demo 試用），則使用原有的帶參網址
+      const encodedGas = encodeURIComponent(GAS_WEB_APP_URL);
+      const tenantParam = isDemoMode() ? `&tenant=${encodeURIComponent(getDemoTenantId())}` : '';
+
+      return {
+        screenLink: `${currentOrigin}/?role=screen&gasUrl=${encodedGas}${tenantParam}`,
+        teacherLink: `${currentOrigin}/?role=teacher&gasUrl=${encodedGas}${tenantParam}`,
+        parentLink: `${currentOrigin}/?role=parent&gasUrl=${encodedGas}${tenantParam}`
+      };
+    }
+
+    // 🟢 透過 Screen Pusher 將同步設定連結推送到目標裝置
+    function pushToBigScreen() {
+      if (!GAS_WEB_APP_URL) {
+        alert("請先輸入並儲存您的 GAS 網址！");
+        return;
+      }
+      const links = generateShareLinks();
+      const currentCode = localStorage.getItem('CLASS_CODE');
+      const tipText = currentCode 
+        ? `【專屬 6 碼連線代碼】：${currentCode}\n【連線網址】：${links.screenLink}\n\n大屏端只需輸入 ${currentCode} 或開啟此網址即可完成綁定！`
+        : `【跨裝置同步連結】：${links.screenLink}`;
+      
+      navigator.clipboard.writeText(links.screenLink).then(() => {
+        alert(`已複製連線網址！\n${tipText}\n\n系統即將為您開啟 Screen Pusher，請將剪貼簿內容貼上並傳送至目標裝置。`);
+        window.open('https://screen-pusher.vercel.app/screen.html', '_blank');
+      }).catch(() => {
+        prompt("請複製以下連線網址，並貼到 Screen Pusher 傳送至目標裝置：", links.screenLink);
+        window.open('https://screen-pusher.vercel.app/screen.html', '_blank');
+      });
+    }
+
+    // 🟢 複製家長端連結
+    function copyParentLink() {
+      if (!GAS_WEB_APP_URL) {
+        alert("請先輸入並儲存您的 GAS 網址！");
+        return;
+      }
+      const links = generateShareLinks();
+      const currentCode = localStorage.getItem('CLASS_CODE');
+      const tip = currentCode
+        ? `已複製【家長端極簡短連結】！\n\n專屬網址：${links.parentLink}\n班級代碼：${currentCode}\n\n家長在 LINE 點開即可自動完成綁定，直接查詢作業與缺交！`
+        : `已複製【家長端專用連結】！\n${links.parentLink}\n\n您可以直接貼至 LINE 班級群組供家長使用。`;
+
+      navigator.clipboard.writeText(links.parentLink).then(() => {
+        alert(tip);
+      }).catch(() => {
+        prompt("請複製以下家長專用連結：", links.parentLink);
+      });
+    }
 
 // 儲存 GAS 網址
 function saveGasUrlSetting() {

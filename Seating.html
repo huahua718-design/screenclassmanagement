@@ -155,6 +155,12 @@
         📷 照片：<span id="photoStatsText">0/0</span>
       </button>
 
+      <!-- 🔑 班級 6 碼代碼徽章 (可點擊設定) -->
+      <button onclick="openClassCodeModal()" id="classCodeBadgeBtn" class="bg-indigo-800/80 hover:bg-indigo-900 text-white px-2.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 border border-indigo-400 cursor-pointer" title="點擊輸入 6 碼代碼連線">
+        <span>🔑</span>
+        <span id="classCodeBadgeText">代碼連線</span>
+      </button>
+
       <!-- GAS 雲端連線狀態徽章 (可點擊設定) -->
       <button onclick="openGasModal()" id="gasStatusBadge" class="bg-indigo-800/80 hover:bg-indigo-900 text-white px-2.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 border border-indigo-400 cursor-pointer" title="點擊設定 Google Apps Script (GAS) 部署網址">
         <span id="gasStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
@@ -163,6 +169,11 @@
     </div>
     
     <div class="flex items-center flex-wrap gap-2">
+      <!-- 🎨 一鍵變更全班頭像風格 -->
+      <button onclick="openAvatarStyleModal()" class="bg-purple-600 hover:bg-purple-500 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1 shadow cursor-pointer" title="一鍵變更全班頭像風格 (DiceBear Q版/機器人/像素風)">
+        🎨 頭像風格
+      </button>
+
       <!-- 📸 現場拍照配對按鈕 -->
       <button onclick="openPhotoModal()" class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-extrabold transition shadow flex items-center gap-1.5 animate-pulse">
         📸 拍照配對
@@ -482,6 +493,136 @@
     </div>
   </div>
 
+  <!-- 🎨 一鍵變更全班頭像風格彈窗 -->
+  <div id="avatarStyleModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center hidden z-50 p-4 no-print overflow-y-auto">
+    <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl border border-slate-200 my-auto">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl">🎨</div>
+          <div>
+            <h3 class="text-lg font-black text-slate-800">全班學生頭像風格中心</h3>
+            <p class="text-xs text-slate-500">免上傳、高清向量、一鍵秒換全班造型風格</p>
+          </div>
+        </div>
+        <button onclick="closeAvatarStyleModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center transition">✕</button>
+      </div>
+
+      <!-- 模式切換：僅未拍照 vs 全班變身卡 -->
+      <div class="bg-purple-50 p-3 rounded-2xl border border-purple-200 mb-4">
+        <div class="text-xs font-black text-purple-900 mb-2">🎭 套用範圍模式：</div>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-purple-200 cursor-pointer text-xs font-bold text-slate-700 hover:bg-purple-100/50">
+            <input type="radio" name="avatarApplyScope" value="unphotographed" checked onchange="updateAvatarStylePreview()">
+            <span>👤 僅未拍照者套用<br><span class="text-[10px] text-slate-400 font-normal">保留已拍照真實照片</span></span>
+          </label>
+          <label class="flex items-center gap-2 p-2 rounded-xl bg-white border border-purple-200 cursor-pointer text-xs font-bold text-purple-700 hover:bg-purple-100/50">
+            <input type="radio" name="avatarApplyScope" value="overrideAll" onchange="updateAvatarStylePreview()">
+            <span>✨ 全班一鍵變身卡<br><span class="text-[10px] text-purple-400 font-normal">全班統一變換此主題</span></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 風格選擇清單 (DiceBear 經典開源風格) -->
+      <div class="mb-4">
+        <label class="block text-xs font-black text-slate-700 mb-2">選擇頭像藝術風格：</label>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-1">
+          <button type="button" onclick="selectAvatarStyle('adventurer')" data-style="adventurer" class="avatar-style-btn p-2 rounded-2xl border-2 border-indigo-500 bg-indigo-50 flex flex-col items-center gap-1 transition text-center">
+            <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=preview_1" class="w-11 h-11 rounded-full bg-white shadow-sm object-cover">
+            <span class="text-xs font-black text-slate-800">Q版冒險家</span>
+            <span class="text-[10px] text-indigo-600 font-bold">日系RPG</span>
+          </button>
+
+          <button type="button" onclick="selectAvatarStyle('bottts')" data-style="bottts" class="avatar-style-btn p-2 rounded-2xl border-2 border-slate-200 hover:border-indigo-300 bg-white flex flex-col items-center gap-1 transition text-center">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=preview_2" class="w-11 h-11 rounded-full bg-white shadow-sm object-cover">
+            <span class="text-xs font-black text-slate-800">智慧機器人</span>
+            <span class="text-[10px] text-slate-400 font-bold">科技感超酷</span>
+          </button>
+
+          <button type="button" onclick="selectAvatarStyle('pixel-art')" data-style="pixel-art" class="avatar-style-btn p-2 rounded-2xl border-2 border-slate-200 hover:border-indigo-300 bg-white flex flex-col items-center gap-1 transition text-center">
+            <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=preview_3" class="w-11 h-11 rounded-full bg-white shadow-sm object-cover">
+            <span class="text-xs font-black text-slate-800">復古像素風</span>
+            <span class="text-[10px] text-slate-400 font-bold">8-bit勇者</span>
+          </button>
+
+          <button type="button" onclick="selectAvatarStyle('thumbs')" data-style="thumbs" class="avatar-style-btn p-2 rounded-2xl border-2 border-slate-200 hover:border-indigo-300 bg-white flex flex-col items-center gap-1 transition text-center">
+            <img src="https://api.dicebear.com/7.x/thumbs/svg?seed=preview_4" class="w-11 h-11 rounded-full bg-white shadow-sm object-cover">
+            <span class="text-xs font-black text-slate-800">微笑拇指人</span>
+            <span class="text-[10px] text-slate-400 font-bold">元氣陽光</span>
+          </button>
+
+          <button type="button" onclick="selectAvatarStyle('fun-emoji')" data-style="fun-emoji" class="avatar-style-btn p-2 rounded-2xl border-2 border-slate-200 hover:border-indigo-300 bg-white flex flex-col items-center gap-1 transition text-center">
+            <img src="https://api.dicebear.com/7.x/fun-emoji/svg?seed=preview_5" class="w-11 h-11 rounded-full bg-white shadow-sm object-cover">
+            <span class="text-xs font-black text-slate-800">逗趣小怪獸</span>
+            <span class="text-[10px] text-slate-400 font-bold">萌寵表情</span>
+          </button>
+
+          <button type="button" onclick="selectAvatarStyle('lorelei')" data-style="lorelei" class="avatar-style-btn p-2 rounded-2xl border-2 border-slate-200 hover:border-indigo-300 bg-white flex flex-col items-center gap-1 transition text-center">
+            <img src="https://api.dicebear.com/7.x/lorelei/svg?seed=preview_6" class="w-11 h-11 rounded-full bg-white shadow-sm object-cover">
+            <span class="text-xs font-black text-slate-800">清新日漫風</span>
+            <span class="text-[10px] text-slate-400 font-bold">二次元動漫</span>
+          </button>
+
+          <button type="button" onclick="selectAvatarStyle('notionists')" data-style="notionists" class="avatar-style-btn p-2 rounded-2xl border-2 border-slate-200 hover:border-indigo-300 bg-white flex flex-col items-center gap-1 transition text-center">
+            <img src="https://api.dicebear.com/7.x/notionists/svg?seed=preview_7" class="w-11 h-11 rounded-full bg-white shadow-sm object-cover">
+            <span class="text-xs font-black text-slate-800">Notion手繪</span>
+            <span class="text-[10px] text-slate-400 font-bold">極簡黑白</span>
+          </button>
+
+          <button type="button" onclick="selectAvatarStyle('none')" data-style="none" class="avatar-style-btn p-2 rounded-2xl border-2 border-slate-200 hover:border-indigo-300 bg-white flex flex-col items-center gap-1 transition text-center">
+            <div class="w-11 h-11 rounded-full bg-slate-100 flex items-center justify-center text-xl text-slate-400">👤</div>
+            <span class="text-xs font-black text-slate-800">預設灰階</span>
+            <span class="text-[10px] text-slate-400 font-bold">標準剪影</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 即時效果預覽區 -->
+      <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 mb-4">
+        <div class="text-[11px] font-bold text-slate-500 mb-2 flex justify-between items-center">
+          <span>🔍 座位表預覽效果（依座號自動運算）：</span>
+          <span id="previewStyleName" class="text-purple-600 font-extrabold">Q版冒險家</span>
+        </div>
+        <div class="flex justify-around items-center py-1" id="avatarPreviewContainer">
+          <!-- 動態注入 1~4 號預覽 -->
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="applyAvatarStyle()" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-extrabold py-3 rounded-2xl text-sm transition shadow cursor-pointer">
+          ✨ 立即套用至全班
+        </button>
+        <button onclick="closeAvatarStyleModal()" class="px-5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-2xl text-sm transition cursor-pointer">
+          取消
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔑 班級 6 碼代碼連線彈窗 (座位表端) -->
+  <div id="classCodeModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center hidden z-50 p-4 no-print">
+    <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-200 text-center">
+      <div class="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 text-2xl flex items-center justify-center mx-auto mb-2">🔑</div>
+      <h3 class="text-lg font-black text-slate-800">班級代碼連線</h3>
+      <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">
+        輸入老師提供的 6 碼英數代碼，即可直接載入該班級的座位表與名單：
+      </p>
+
+      <input type="text" id="seatingInputCode" maxlength="6" placeholder="例如：K8M3P9" 
+             class="w-full text-center text-3xl font-black tracking-widest uppercase p-3 border-2 border-sky-400 rounded-2xl font-mono outline-none bg-sky-50 text-sky-800 mb-4"
+             oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')"
+             onkeydown="if(event.key === 'Enter') handleConnectSeatingByCode();">
+
+      <div class="flex gap-2.5">
+        <button onclick="handleConnectSeatingByCode()" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-extrabold py-3 rounded-2xl text-sm transition shadow cursor-pointer">
+          🚀 連線進入班級
+        </button>
+        <button onclick="closeClassCodeModal()" class="px-5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-2xl text-sm transition cursor-pointer">
+          關閉
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // =========================================================================
     // 🌐 系統核心變數與雙模式 (GAS / Vercel) 自適應橋接
@@ -549,6 +690,202 @@
         window.history.replaceState({}, document.title, newSearch);
       }
       return localStorage.getItem('GAS_WEB_APP_URL') || DEFAULT_GAS_URL;
+    }
+
+    // =========================================================================
+    // 📖 中央名錄 GAS 網址 (專門負責 6 碼代碼發放與查詢)
+    // =========================================================================
+    const CENTRAL_DIRECTORY_GAS_URL = "https://script.google.com/macros/s/AKfycbz_CENTRAL_DIRECTORY_GAS_URL/exec";
+
+    async function lookupClassCode(code) {
+      if (!code) return null;
+      const cleanCode = code.trim().toUpperCase();
+      try {
+        const url = `${CENTRAL_DIRECTORY_GAS_URL}?action=lookup&code=${encodeURIComponent(cleanCode)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && data.success && data.gasUrl) {
+          return data.gasUrl;
+        }
+        return null;
+      } catch (err) {
+        console.warn("中央名錄查詢失敗:", err);
+        return null;
+      }
+    }
+
+    function openClassCodeModal() {
+      const modal = document.getElementById('classCodeModal');
+      if (modal) modal.classList.remove('hidden');
+      const existing = localStorage.getItem('CLASS_CODE') || '';
+      const input = document.getElementById('seatingInputCode');
+      if (input && existing) input.value = existing;
+    }
+
+    function closeClassCodeModal() {
+      const modal = document.getElementById('classCodeModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function handleConnectSeatingByCode() {
+      const input = document.getElementById('seatingInputCode');
+      const code = (input ? input.value : '').trim().toUpperCase();
+      if (!code || code.length < 4) {
+        alert("請輸入正確的 6 碼班級代碼！");
+        return;
+      }
+      const gasUrl = await lookupClassCode(code);
+      if (gasUrl) {
+        localStorage.setItem('GAS_WEB_APP_URL', gasUrl);
+        localStorage.setItem('CLASS_CODE', code);
+        alert(`🎉 成功直連班級【${code}】！座位表即將重新載入。`);
+        closeClassCodeModal();
+        location.reload();
+      } else {
+        alert(`❌ 查無代碼【${code}】之班級資訊，請確認代碼是否正確！`);
+      }
+    }
+
+    function updateClassCodeBadgeUI() {
+      const code = localStorage.getItem('CLASS_CODE');
+      const badgeText = document.getElementById('classCodeBadgeText');
+      const badgeBtn = document.getElementById('classCodeBadgeBtn');
+      if (badgeText && badgeBtn) {
+        if (code) {
+          badgeText.innerText = `${code}`;
+          badgeBtn.className = "bg-sky-700 hover:bg-sky-600 text-white px-2.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 border border-sky-400 cursor-pointer shadow-sm";
+        } else {
+          badgeText.innerText = "代碼連線";
+          badgeBtn.className = "bg-indigo-800/80 hover:bg-indigo-900 text-white px-2.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 border border-indigo-400 cursor-pointer";
+        }
+      }
+    }
+
+    // =========================================================================
+    // 🎨 全班學生頭像風格引擎 (DiceBear SVG Vector Engine)
+    // =========================================================================
+    let currentSelectedAvatarStyle = 'adventurer';
+
+    function getAvatarStyleConfig() {
+      try {
+        const raw = localStorage.getItem(getStorageKey('AVATAR_STYLE_CONFIG'));
+        if (raw) return JSON.parse(raw);
+      } catch(e) {}
+      return { style: 'adventurer', overrideAll: false };
+    }
+
+    function saveAvatarStyleConfig(cfg) {
+      localStorage.setItem(getStorageKey('AVATAR_STYLE_CONFIG'), JSON.stringify(cfg));
+    }
+
+    function getStudentAvatarInfo(student) {
+      const cfg = getAvatarStyleConfig();
+      const hasRealPhoto = !!(student && student.photoUrl);
+
+      // 1. 若有真實照片且非「全班一鍵變身卡」，優先使用真實照片
+      if (hasRealPhoto && !cfg.overrideAll) {
+        return { type: 'real', url: student.photoUrl };
+      }
+
+      // 2. 若風格非 'none'，依座號 (id) 產生固定種子，確保每位學生造型穩定唯一
+      if (cfg.style && cfg.style !== 'none') {
+        const seed = `student_${student ? (student.id || student.name || '0') : '0'}`;
+        const url = `https://api.dicebear.com/7.x/${cfg.style}/svg?seed=${encodeURIComponent(seed)}`;
+        return { type: 'dicebear', url: url };
+      }
+
+      // 3. 預設佔位
+      return hasRealPhoto ? { type: 'real', url: student.photoUrl } : null;
+    }
+
+    function openAvatarStyleModal() {
+      const cfg = getAvatarStyleConfig();
+      currentSelectedAvatarStyle = cfg.style || 'adventurer';
+      
+      const radio = document.querySelector(`input[name="avatarApplyScope"][value="${cfg.overrideAll ? 'overrideAll' : 'unphotographed'}"]`);
+      if (radio) radio.checked = true;
+
+      highlightStyleButton(currentSelectedAvatarStyle);
+      updateAvatarStylePreview();
+
+      const modal = document.getElementById('avatarStyleModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeAvatarStyleModal() {
+      const modal = document.getElementById('avatarStyleModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function selectAvatarStyle(style) {
+      currentSelectedAvatarStyle = style;
+      highlightStyleButton(style);
+      updateAvatarStylePreview();
+    }
+
+    function highlightStyleButton(style) {
+      const btns = document.querySelectorAll('.avatar-style-btn');
+      btns.forEach(b => {
+        if (b.dataset.style === style) {
+          b.className = 'avatar-style-btn p-2 rounded-2xl border-2 border-indigo-500 bg-indigo-50 flex flex-col items-center gap-1 transition text-center shadow-sm';
+        } else {
+          b.className = 'avatar-style-btn p-2 rounded-2xl border-2 border-slate-200 hover:border-indigo-300 bg-white flex flex-col items-center gap-1 transition text-center';
+        }
+      });
+    }
+
+    function updateAvatarStylePreview() {
+      const nameMap = {
+        'adventurer': 'Q版冒險家',
+        'bottts': '智慧機器人',
+        'pixel-art': '復古像素風',
+        'thumbs': '微笑拇指人',
+        'fun-emoji': '逗趣小怪獸',
+        'lorelei': '清新日漫風',
+        'notionists': 'Notion手繪',
+        'none': '預設灰階剪影'
+      };
+      const title = document.getElementById('previewStyleName');
+      if (title) title.innerText = nameMap[currentSelectedAvatarStyle] || currentSelectedAvatarStyle;
+
+      const container = document.getElementById('avatarPreviewContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const sampleSeeds = ['1', '2', '3', '4'];
+      sampleSeeds.forEach(num => {
+        const box = document.createElement('div');
+        box.className = 'flex flex-col items-center';
+        if (currentSelectedAvatarStyle === 'none') {
+          box.innerHTML = `
+            <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-sm">👤</div>
+            <span class="text-[10px] text-slate-500 mt-1 font-bold">${num}號</span>
+          `;
+        } else {
+          const url = `https://api.dicebear.com/7.x/${currentSelectedAvatarStyle}/svg?seed=student_${num}`;
+          box.innerHTML = `
+            <img src="${url}" class="w-10 h-10 rounded-full border border-purple-300 bg-white shadow-sm object-cover">
+            <span class="text-[10px] text-slate-500 mt-1 font-bold">${num}號</span>
+          `;
+        }
+        container.appendChild(box);
+      });
+    }
+
+    function applyAvatarStyle() {
+      const radio = document.querySelector('input[name="avatarApplyScope"]:checked');
+      const overrideAll = radio ? (radio.value === 'overrideAll') : false;
+
+      const cfg = {
+        style: currentSelectedAvatarStyle,
+        overrideAll: overrideAll
+      };
+      saveAvatarStyleConfig(cfg);
+      closeAvatarStyleModal();
+      renderAll();
+
+      const scopeMsg = overrideAll ? '全班變身卡（全班統一換裝）' : '僅未拍照學生套用';
+      alert(`🎨 頭像風格已更新！\n當前風格：【${currentSelectedAvatarStyle}】\n套用範圍：【${scopeMsg}】`);
     }
 
     let state = {
@@ -628,22 +965,46 @@
       renderAll();
       updateGasStatusUI();
       updateSystemModeUI();
+      updateClassCodeBadgeUI();
     })();
 
     // =========================================================================
     // 🚀 Window.onload 異步同步雲端資料
     // =========================================================================
-    window.onload = function() {
+    window.onload = async function() {
+      updateClassCodeBadgeUI();
       updateModelUI(state.latestGeminiModel);
+
+      // 0. 若網址帶有 code 參數，向中央名錄換取 GAS 網址 (查詢一次，終身直連)
+      const urlParams = new URLSearchParams(window.location.search);
+      const codeParam = (urlParams.get('code') || urlParams.get('classCode') || '').trim();
+      if (codeParam) {
+        const cleanCode = codeParam.toUpperCase();
+        try {
+          const resolvedGas = await lookupClassCode(cleanCode);
+          if (resolvedGas) {
+            localStorage.setItem('GAS_WEB_APP_URL', resolvedGas);
+            localStorage.setItem('CLASS_CODE', cleanCode);
+            urlParams.delete('code');
+            urlParams.delete('classCode');
+            const newSearch = urlParams.toString() ? '?' + urlParams.toString() : window.location.pathname;
+            window.history.replaceState({}, document.title, newSearch);
+            updateClassCodeBadgeUI();
+            updateGasStatusUI();
+            updateSystemModeUI();
+          }
+        } catch (e) {
+          console.warn("解析班級代碼失敗:", e);
+        }
+      }
 
       // 1. 聯網確認最新 Gemini 模型
       searchLatestGeminiModel();
 
       // 2. 向雲端同步學生名單與座位資料
-      syncWithCloudData();
+      await syncWithCloudData();
 
       // 3. 若網址帶有 mode=camera 參數，自動開啟相機介面
-      const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('mode') === 'camera' || urlParams.get('mode') === 'photo') {
         openPhotoModal();
       }
@@ -896,8 +1257,9 @@
           isSelected ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-slate-50 hover:bg-indigo-50 border-slate-200 text-slate-700'
         }`;
         
-        const photoThumb = student.photoUrl 
-          ? `<img src="${student.photoUrl}" class="w-7 h-7 rounded-full object-cover border border-indigo-300 mr-2">`
+        const avatarInfo = getStudentAvatarInfo(student);
+        const photoThumb = avatarInfo 
+          ? `<img src="${avatarInfo.url}" class="w-7 h-7 rounded-full object-cover border ${avatarInfo.type === 'real' ? 'border-indigo-300' : 'border-purple-300 bg-purple-50'} mr-2">`
           : `<div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-500 mr-2">👤</div>`;
 
         item.innerHTML = `
@@ -905,7 +1267,7 @@
             ${photoThumb}
             <span>${student.id}  ${student.name}</span>
           </div>
-          <span class="text-xs ${isSelected ? 'text-indigo-200' : 'text-slate-400'}">${student.photoUrl ? '📷 已拍' : '未拍'}</span>
+          <span class="text-xs ${isSelected ? 'text-indigo-200' : 'text-slate-400'}">${student.photoUrl ? '📷 已拍' : (avatarInfo ? '🎨 造型' : '未拍')}</span>
         `;
 
         if (state.isEditMode) {
@@ -958,16 +1320,17 @@
             cellEl.className += ' bg-amber-500 text-white cursor-pointer';
             cellEl.innerHTML = `<div class="m-auto font-black text-xl sm:text-2xl">❓ 蓋牌</div>`;
           } else if (cell.student) {
-            const hasPhoto = !!cell.student.photoUrl;
+            const avatarInfo = getStudentAvatarInfo(cell.student);
             cellEl.innerHTML = `
               <div class="flex items-center justify-between w-full px-1">
                 <span class="text-xs font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-full print-id">${cell.student.id} 號</span>
                 <span class="text-[10px] font-semibold text-slate-400 print-coord">${r+1}-${c+1}</span>
               </div>
               <div class="relative my-auto flex flex-col items-center justify-center w-full">
-                ${hasPhoto ? `
-                  <img src="${cell.student.photoUrl}" alt="${cell.student.name}" 
-                       class="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover border-2 border-indigo-400 shadow-sm transition hover:scale-110 print-avatar"
+                ${avatarInfo ? `
+                  <img src="${avatarInfo.url}" alt="${cell.student.name}" 
+                       class="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover border-2 ${avatarInfo.type === 'real' ? 'border-indigo-400' : 'border-purple-400 bg-purple-50'} shadow-sm transition hover:scale-110 print-avatar"
+                       loading="lazy"
                        onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\\'w-10 h-10 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-400 text-base\\'>👤</div>';" />
                 ` : `
                   <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-base sm:text-lg text-slate-400" title="尚未拍照">
@@ -1234,6 +1597,10 @@
       
       const queryParams = new URLSearchParams();
       queryParams.set('role', role);
+      const classCode = localStorage.getItem('CLASS_CODE');
+      if (classCode) {
+        queryParams.set('code', classCode);
+      }
       if (gasUrl) {
         queryParams.set('gasUrl', gasUrl);
       }
